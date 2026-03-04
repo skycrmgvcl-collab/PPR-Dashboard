@@ -3,31 +3,25 @@ import pandas as pd
 from st_aggrid import AgGrid, GridOptionsBuilder, JsCode
 import base64
 
-st.set_page_config(page_title="PPR Paid Pending Dashboard", layout="wide")
+st.set_page_config(page_title="PPR Release Form Dashboard", layout="wide")
 
 st.markdown("## 💰 Paid Pending Report (PPR) Dashboard")
-st.caption("Survey Category Wise Monitoring")
 
-# ---------------------------------------------------
+# -----------------------------------------------------------
 # SIDEBAR FILTERS
-# ---------------------------------------------------
+# -----------------------------------------------------------
 
 st.sidebar.header("Filters")
 
-show_shift = st.sidebar.checkbox("Connection Shifting (Non Cons)")
-show_pmsy = st.sidebar.checkbox("PMSY RTS")
-show_rooftop = st.sidebar.checkbox("LT Rooftop")
-
-# ---------------------------------------------------
+# -----------------------------------------------------------
 # FILE UPLOAD
-# ---------------------------------------------------
+# -----------------------------------------------------------
 
 file = st.file_uploader("Upload PPR Excel/CSV File", type=["xlsx","xls","csv"])
 
-
-# ---------------------------------------------------
+# -----------------------------------------------------------
 # RELEASE FORM HTML
-# ---------------------------------------------------
+# -----------------------------------------------------------
 
 def create_release_html(row):
 
@@ -47,19 +41,19 @@ def create_release_html(row):
 
 @page {{
 size:A4;
-margin:12mm;
+margin:10mm;
 }}
 
 body {{
 font-family:'Shruti','Nirmala UI';
-font-size:13px;
-line-height:1.4;
+font-size:14px;
+line-height:1.3;
 }}
 
 .header {{
 text-align:center;
 font-weight:bold;
-font-size:20px;
+font-size:22px;
 }}
 
 .subheader {{
@@ -88,11 +82,12 @@ vertical-align:top;
 
 .section {{
 font-weight:bold;
-background:#f2f2f2;
+background:#efefef;
 }}
 
 .bold {{
 font-weight:bold;
+font-size:15px;
 }}
 
 </style>
@@ -103,7 +98,6 @@ font-weight:bold;
 
 <div class="header">મધ્ય ગુજરાત વીજ કંપની લી.</div>
 <div class="subheader">વિરપુર</div>
-
 <div class="title">નવું કનેક્શન ચાલુ કર્યા અંગેનો રિપોર્ટ</div>
 
 <table>
@@ -119,6 +113,16 @@ font-weight:bold;
 </tr>
 
 <tr>
+<td>SR Type</td>
+<td>{row.get("SR Type","")}</td>
+</tr>
+
+<tr>
+<td>Name Of Scheme</td>
+<td>{row.get("Name Of Scheme","")}</td>
+</tr>
+
+<tr>
 <td>લોડ</td>
 <td>{row.get("Demand Load","")} {row.get("Load Uom","")}</td>
 </tr>
@@ -126,8 +130,8 @@ font-weight:bold;
 <tr>
 <td>સરનામું</td>
 <td>
-{row.get("Address1","")} 
-{row.get("Address2","")} 
+{row.get("Address1","")}
+{row.get("Address2","")}
 {row.get("Village Or City","")}
 </td>
 </tr>
@@ -174,63 +178,35 @@ font-weight:bold;
 <table>
 
 <tr class="section">
-<td colspan="3">૫. માલ સામાન વપરાશની નોંધ</td>
+<td colspan="2">૫. માલ સામાન વપરાશની નોંધ</td>
 </tr>
 
 <tr>
-<td colspan="3">સર્વિસ વાયર પી.વી.સી. ______ કોર ______ એમ.એમ. ______ મીટર</td>
+<td colspan="2">
+સર્વિસ વાયર પી.વી.સી. ______ કોર ______ એમ.એમ. ______ મીટર
+</td>
 </tr>
 
 <tr>
-<td colspan="3">ELCB Make _________ &nbsp;&nbsp;&nbsp; Capacity _________</td>
+<td colspan="2">
+ELCB Make _________ &nbsp;&nbsp;&nbsp; Capacity _________
+</td>
 </tr>
 
 <tr>
-<td colspan="3">1-Ph SMC બોક્ષ ______ નંગ | 3-Ph SMC બોક્ષ ______ નંગ</td>
+<td colspan="2">
+1-Ph SMC બોક્ષ ______ નંગ &nbsp;&nbsp; | &nbsp;&nbsp; 3-Ph SMC બોક્ષ ______ નંગ
+</td>
 </tr>
 
 <tr class="section">
-<td colspan="3">મીટર વિગતો (Meter Details)</td>
+<td colspan="2">મીટર વિગતો (Manual Entry)</td>
 </tr>
 
 <tr>
-<td width="30%">કંપની</td>
-<td colspan="2">________________</td>
-</tr>
-
-<tr>
-<td>ટાઈપ</td>
-<td colspan="2">________________</td>
-</tr>
-
-<tr>
-<td>કેપેસિટી</td>
-<td colspan="2">________________</td>
-</tr>
-
-<tr>
-<td>આંટા</td>
-<td colspan="2">________________</td>
-</tr>
-
-<tr>
-<td>મીટર નંબર</td>
-<td colspan="2">________________</td>
-</tr>
-
-<tr>
-<td>લેબ નંબર</td>
-<td colspan="2">________________</td>
-</tr>
-
-<tr>
-<td>રીડિંગ</td>
-<td colspan="2">________________</td>
-</tr>
-
-<tr>
-<td>બોડી સીલ</td>
-<td colspan="2">________________</td>
+<td colspan="2" style="height:120px">
+&nbsp;
+</td>
 </tr>
 
 </table>
@@ -240,66 +216,68 @@ font-weight:bold;
 <table>
 
 <tr class="section">
-<td colspan="3">૬. સીલ ની વિગત</td>
+<td colspan="2">૬. સીલ ની વિગત</td>
 </tr>
 
 <tr>
-<td width="30%">ટર્મિનલ સીલ</td>
-<td colspan="2">______________________</td>
+<td width="40%">ટર્મિનલ સીલ</td>
+<td>______________________</td>
 </tr>
 
 <tr>
 <td>SMC Box સીલ</td>
-<td colspan="2">______________________</td>
+<td>______________________</td>
+</tr>
+
+<tr class="section">
+<td colspan="2">૭. મીટર બોર્ડ</td>
 </tr>
 
 <tr>
-<td colspan="3" class="section">૭. મીટર બોર્ડ</td>
+<td colspan="2">
+મીટર બોર્ડ __________ નંગ (TKJ / ZP Only)
+</td>
+</tr>
+
+<tr class="section">
+<td colspan="2">૮. ઇન્સ્યુલેટર વિગતો</td>
 </tr>
 
 <tr>
-<td colspan="3">મીટર બોર્ડ __________ નંગ (TKJ / ZP Only)</td>
-</tr>
-
-<tr>
-<td colspan="3" class="section">૮. ઇન્સ્યુલેટર વિગતો</td>
-</tr>
-
-<tr>
-<td colspan="3">
+<td colspan="2">
 રીલ ઇન્સ્યુલેટર ______ નંગ | એગ ઇન્સ્યુલેટર ______ નંગ | GI વાયર 10 ______ મીટર
 </td>
 </tr>
 
-<tr>
-<td colspan="3" class="section">૯. અર્થિંગ</td>
+<tr class="section">
+<td colspan="2">૯. અર્થિંગ</td>
 </tr>
 
 <tr>
-<td colspan="3">
+<td colspan="2">
 અરથીંગ વાયર ______ મીટર | અરથીંગ પાઇપ ______ નંગ
 </td>
 </tr>
 
-<tr>
-<td colspan="3" class="section">૧૦. મીટર પેટી</td>
+<tr class="section">
+<td colspan="2">૧૦. મીટર પેટી</td>
 </tr>
 
 <tr>
-<td colspan="3">
+<td colspan="2">
 મીટર પેટી ની ઊંચાઈ ૫ ફિટ કરતાં વધારે નથી (હા/ના)? __________
 </td>
 </tr>
 
 <tr>
-<td colspan="3">
+<td colspan="2">
 મીટર / મીટર પેટી / સીલિંગ તથા સર્વિસ લાઇન ગ્રાહક તરીકે સાચવવાની સંપૂર્ણ જવાબદારી મારી છે.
 </td>
 </tr>
 
 </table>
 
-<br><br>
+<br>
 
 <table>
 
@@ -318,9 +296,9 @@ font-weight:bold;
 
     return base64.b64encode(html.encode("utf-8")).decode()
 
-# ---------------------------------------------------
+# -----------------------------------------------------------
 # PROCESS FILE
-# ---------------------------------------------------
+# -----------------------------------------------------------
 
 if file:
 
@@ -330,56 +308,27 @@ if file:
     df["Name Of Scheme"] = df["Name Of Scheme"].astype(str).str.strip()
     df["Survey Category"] = df["Survey Category"].astype(str).str.strip()
 
-    df = df[df["SR Type"].str.lower() != "change of name"]
-    df = df[df["Name Of Scheme"].str.lower() != "spa schemes"]
+    # -----------------------------------------------------------
+    # MULTI SELECT FILTERS
+    # -----------------------------------------------------------
 
-# ---------------------------------------------------
-# SR TYPE FILTER
-# ---------------------------------------------------
+    sr_types = sorted(df["SR Type"].dropna().unique())
+    selected_sr = st.sidebar.multiselect("SR Type", sr_types, default=sr_types)
 
-    selected_types=[]
+    df = df[df["SR Type"].isin(selected_sr)]
 
-    if show_shift:
-        selected_types.append("Connection Shifting(Non Cons)")
-    if show_pmsy:
-        selected_types.append("PMSY RTS")
-    if show_rooftop:
-        selected_types.append("LT Rooftop")
+    schemes = sorted(df["Name Of Scheme"].dropna().unique())
+    selected_scheme = st.sidebar.multiselect("Name Of Scheme", schemes, default=schemes)
 
-    if selected_types:
-        df=df[df["SR Type"].isin(selected_types)]
+    df = df[df["Name Of Scheme"].isin(selected_scheme)]
 
-# ---------------------------------------------------
-# SCHEME FILTER
-# ---------------------------------------------------
+    survey_list = sorted(df["Survey Category"].dropna().unique())
+    survey_filter = st.selectbox("Survey Category", ["All"] + survey_list)
 
-    scheme_list=sorted(df["Name Of Scheme"].dropna().unique())
-
-    scheme_filter=st.sidebar.selectbox("Name Of Scheme",["All"]+scheme_list)
-
-    if scheme_filter!="All":
-        df=df[df["Name Of Scheme"]==scheme_filter]
-
-# ---------------------------------------------------
-# SURVEY CATEGORY FILTER
-# ---------------------------------------------------
-
-    survey_list=sorted(df["Survey Category"].dropna().unique())
-
-    survey_filter=st.selectbox("Select Survey Category",["All"]+survey_list)
-
-    if survey_filter!="All":
-        df=df[df["Survey Category"]==survey_filter]
-
-# ---------------------------------------------------
-# SERIAL NUMBER
-# ---------------------------------------------------
+    if survey_filter != "All":
+        df = df[df["Survey Category"] == survey_filter]
 
     df.insert(0,"Sr No",range(1,len(df)+1))
-
-# ---------------------------------------------------
-# PRINT DATA
-# ---------------------------------------------------
 
     def generate_print(row):
 
@@ -394,18 +343,20 @@ if file:
 
     st.metric("Total Records",len(df))
 
-# ---------------------------------------------------
+# -----------------------------------------------------------
 # GRID
-# ---------------------------------------------------
+# -----------------------------------------------------------
 
-    renderer=JsCode("""
+    renderer = JsCode("""
 
 class Renderer{
 
 init(params){
 
 this.eGui=document.createElement('span');
+
 this.eGui.innerHTML='🖨';
+
 this.eGui.style.cursor='pointer';
 
 this.eGui.addEventListener('click',()=>{
@@ -417,9 +368,11 @@ if(b64=="") return;
 const win=window.open("","_blank");
 
 const bytes=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));
+
 const html=new TextDecoder("utf-8").decode(bytes);
 
 win.document.write(html);
+
 win.document.close();
 
 });
@@ -429,9 +382,10 @@ win.document.close();
 getGui(){return this.eGui;}
 
 }
+
 """)
 
-    gb=GridOptionsBuilder.from_dataframe(df)
+    gb = GridOptionsBuilder.from_dataframe(df)
 
     gb.configure_default_column(
         filter=True,
@@ -453,4 +407,5 @@ getGui(){return this.eGui;}
     )
 
 else:
+
     st.info("Upload PPR file to begin")
