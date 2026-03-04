@@ -35,7 +35,7 @@ def create_release_html(row):
 
 @page {{
 size:A4;
-margin:8mm;
+margin:6mm;
 }}
 
 body {{
@@ -47,32 +47,25 @@ line-height:1.2;
 .header {{
 text-align:center;
 font-weight:bold;
-font-size:18px;
+font-size:20px;
 }}
 
 .subheader {{
 text-align:center;
-font-size:13px;
+font-size:14px;
 }}
 
 .title {{
 text-align:center;
 font-weight:bold;
-font-size:14px;
-margin-bottom:4px;
+font-size:15px;
+margin-bottom:6px;
 }}
 
-.container {{
-display:flex;
+.grid {{
+display:grid;
+grid-template-columns:70% 30%;
 gap:8px;
-}}
-
-.left {{
-width:60%;
-}}
-
-.right {{
-width:40%;
 }}
 
 table {{
@@ -81,28 +74,36 @@ border-collapse:collapse;
 }}
 
 td {{
-padding:3px;
+padding:4px;
 vertical-align:top;
 }}
 
 .line {{
 border-bottom:1px solid black;
-display:inline-block;
 width:100%;
-}}
-
-.box {{
-border:1px solid black;
-padding:6px;
+display:inline-block;
 }}
 
 .bold {{
 font-weight:bold;
 }}
 
+.box {{
+border:1.5px solid black;
+padding:6px;
+margin-bottom:6px;
+}}
+
+.box-title {{
+font-weight:bold;
+border-bottom:1px solid black;
+margin-bottom:4px;
+padding-bottom:2px;
+}}
+
 .signature td {{
 text-align:center;
-padding-top:18px;
+padding-top:20px;
 }}
 
 </style>
@@ -115,11 +116,11 @@ padding-top:18px;
 <div class="subheader">વિરપુર</div>
 <div class="title">નવું કનેક્શન ચાલુ કર્યા અંગેનો રિપોર્ટ</div>
 
-<div class="container">
+<div class="grid">
 
-<!-- LEFT SECTION -->
+<!-- LEFT SIDE -->
 
-<div class="left">
+<div>
 
 <table>
 
@@ -207,115 +208,68 @@ ELCB Make _________ &nbsp;&nbsp; Capacity _________
 </div>
 
 <div>
-1-Ph SMC બોક્ષ ______ નંગ | 3-Ph SMC બોક્ષ ______ નંગ
+1-Ph SMC બોક્ષ ______ નંગ &nbsp;&nbsp; | &nbsp;&nbsp; 3-Ph SMC બોક્ષ ______ નંગ
 </div>
 
 </div>
 
-<!-- RIGHT SECTION -->
+<!-- RIGHT SIDE -->
 
-<div class="right">
+<div>
 
 <div class="box">
 
-<div class="bold">મીટર વિગતો</div>
+<div class="box-title">મીટર વિગતો</div>
 
 <table>
 
-<tr>
-<td>કંપની</td>
-<td>__________</td>
-</tr>
-
-<tr>
-<td>ટાઈપ</td>
-<td>__________</td>
-</tr>
-
-<tr>
-<td>કેપેસિટી</td>
-<td>__________</td>
-</tr>
-
-<tr>
-<td>આંટા</td>
-<td>__________</td>
-</tr>
-
-<tr>
-<td>મીટર નંબર</td>
-<td>__________</td>
-</tr>
-
-<tr>
-<td>લેબ નંબર</td>
-<td>__________</td>
-</tr>
-
-<tr>
-<td>રીડિંગ</td>
-<td>__________</td>
-</tr>
-
-<tr>
-<td>બોડી સીલ</td>
-<td>__________</td>
-</tr>
+<tr><td>કંપની</td><td>________</td></tr>
+<tr><td>ટાઈપ</td><td>________</td></tr>
+<tr><td>કેપેસિટી</td><td>________</td></tr>
+<tr><td>આંટા</td><td>________</td></tr>
+<tr><td>મીટર નંબર</td><td>________</td></tr>
+<tr><td>લેબ નંબર</td><td>________</td></tr>
+<tr><td>રીડિંગ</td><td>________</td></tr>
+<tr><td>બોડી સીલ</td><td>________</td></tr>
 
 </table>
 
 </div>
 
-<br>
+<div class="box">
+
+<div class="box-title">૬. સીલ ની વિગત</div>
+
+ટર્મિનલ સીલ : __________<br>
+SMC Box સીલ : __________
+
+</div>
 
 <div class="box">
 
-<div class="bold">૬. સીલ ની વિગત</div>
+<div class="box-title">૭–૯ અન્ય વિગતો</div>
 
-<div>ટર્મિનલ સીલ : __________</div>
-<div>SMC Box સીલ : __________</div>
+મીટર બોર્ડ ______ નંગ<br>
 
-</div>
+રીલ ઇન્સ્યુલેટર ______<br>
+એગ ઇન્સ્યુલેટર ______<br>
 
-<br>
+GI વાયર 10 ______ મીટર<br>
 
-<div class="box">
-
-<div class="bold">૭–૯ અન્ય વિગતો</div>
-
-<div>મીટર બોર્ડ ______ નંગ</div>
-
-<div>
-રીલ ઇન્સ્યુલેટર ______ | એગ ઇન્સ્યુલેટર ______
-</div>
-
-<div>
-GI વાયર 10 ______ મીટર
-</div>
-
-<div>
-અરથીંગ વાયર ______ મીટર
-</div>
-
-<div>
+અરથીંગ વાયર ______ મીટર<br>
 અરથીંગ પાઇપ ______ નંગ
-</div>
 
 </div>
-
-<br>
 
 <div class="box">
 
-<div class="bold">૧૦. મીટર પેટી</div>
+<div class="box-title">૧૦. મીટર પેટી</div>
 
-<div>
 મીટર પેટી ની ઊંચાઈ ૫ ફિટ કરતાં વધારે નથી ? ______
-</div>
 
-<div>
+<br><br>
+
 મીટર / મીટર પેટી / સીલિંગ તથા સર્વિસ લાઇન ગ્રાહક તરીકે સાચવવાની જવાબદારી મારી છે.
-</div>
 
 </div>
 
