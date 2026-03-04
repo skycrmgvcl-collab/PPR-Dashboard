@@ -47,19 +47,32 @@ def create_release_html(row):
 
 @page {{
 size:A4;
-margin:8mm;
+margin:12mm;
 }}
 
 body {{
 font-family:'Shruti','Nirmala UI';
-font-size:11px;
-line-height:1.2;
+font-size:13px;
+line-height:1.4;
 }}
 
 .header {{
 text-align:center;
 font-weight:bold;
+font-size:20px;
+}}
+
+.subheader {{
+text-align:center;
+font-size:14px;
+margin-bottom:10px;
+}}
+
+.title {{
+text-align:center;
+font-weight:bold;
 font-size:16px;
+margin-bottom:10px;
 }}
 
 table {{
@@ -69,8 +82,17 @@ border-collapse:collapse;
 
 td {{
 border:1px solid black;
-padding:3px;
+padding:6px;
 vertical-align:top;
+}}
+
+.section {{
+font-weight:bold;
+background:#f2f2f2;
+}}
+
+.bold {{
+font-weight:bold;
 }}
 
 </style>
@@ -80,9 +102,9 @@ vertical-align:top;
 <body onload="window.print()">
 
 <div class="header">મધ્ય ગુજરાત વીજ કંપની લી.</div>
-<div style="text-align:center">વિરપુર</div>
+<div class="subheader">વિરપુર</div>
 
-<h3 style="text-align:center">નવું કનેક્શન ચાલુ કર્યા અંગેનો રિપોર્ટ</h3>
+<div class="title">નવું કનેક્શન ચાલુ કર્યા અંગેનો રિપોર્ટ</div>
 
 <table>
 
@@ -92,8 +114,8 @@ vertical-align:top;
 </tr>
 
 <tr>
-<td>SR Number</td>
-<td>{row.get("SR Number","")}</td>
+<td class="bold">SR No</td>
+<td class="bold">{row.get("SR Number","")}</td>
 </tr>
 
 <tr>
@@ -104,8 +126,8 @@ vertical-align:top;
 <tr>
 <td>સરનામું</td>
 <td>
-{row.get("Address1","")}
-{row.get("Address2","")}
+{row.get("Address1","")} 
+{row.get("Address2","")} 
 {row.get("Village Or City","")}
 </td>
 </tr>
@@ -151,83 +173,64 @@ vertical-align:top;
 
 <table>
 
-<tr>
-<td width="4%">૫</td>
-<td colspan="2"><b>માલ સામાન વપરાશની નોંધ</b></td>
+<tr class="section">
+<td colspan="3">૫. માલ સામાન વપરાશની નોંધ</td>
 </tr>
 
 <tr>
-<td></td>
-<td colspan="2">
-(૧) સર્વિસ વાયર પી.વી.સી. ______ કોર ______ એમ.એમ. ______ મીટર
-</td>
+<td colspan="3">સર્વિસ વાયર પી.વી.સી. ______ કોર ______ એમ.એમ. ______ મીટર</td>
 </tr>
 
 <tr>
-<td></td>
-<td colspan="2">
-(૨) ELCB Make _________ &nbsp;&nbsp; Capacity _________
-</td>
+<td colspan="3">ELCB Make _________ &nbsp;&nbsp;&nbsp; Capacity _________</td>
 </tr>
 
 <tr>
-<td></td>
-<td colspan="2">
-(૩) 1-Ph SMC બોક્ષ ______ નંગ | 3-Ph SMC બોક્ષ ______ નંગ
-</td>
+<td colspan="3">1-Ph SMC બોક્ષ ______ નંગ | 3-Ph SMC બોક્ષ ______ નંગ</td>
+</tr>
+
+<tr class="section">
+<td colspan="3">મીટર વિગતો (Meter Details)</td>
 </tr>
 
 <tr>
-<td></td>
-<td colspan="2"><b>મીટરની વિગત</b></td>
+<td width="30%">કંપની</td>
+<td colspan="2">________________</td>
 </tr>
 
 <tr>
-<td></td>
-<td>કંપની</td>
-<td>____________</td>
-</tr>
-
-<tr>
-<td></td>
 <td>ટાઈપ</td>
-<td>____________</td>
+<td colspan="2">________________</td>
 </tr>
 
 <tr>
-<td></td>
 <td>કેપેસિટી</td>
-<td>____________</td>
+<td colspan="2">________________</td>
 </tr>
 
 <tr>
-<td></td>
 <td>આંટા</td>
-<td>____________</td>
+<td colspan="2">________________</td>
 </tr>
 
 <tr>
-<td></td>
 <td>મીટર નંબર</td>
-<td>____________</td>
+<td colspan="2">________________</td>
 </tr>
 
 <tr>
-<td></td>
 <td>લેબ નંબર</td>
-<td>____________</td>
+<td colspan="2">________________</td>
 </tr>
 
 <tr>
-<td></td>
 <td>રીડિંગ</td>
-<td>____________</td>
+<td colspan="2">________________</td>
 </tr>
 
 <tr>
-<td></td>
 <td>બોડી સીલ</td>
-<td>____________</td>
+<td colspan="2">________________</td>
 </tr>
 
 </table>
@@ -236,64 +239,75 @@ vertical-align:top;
 
 <table>
 
-<tr>
-<td width="4%">૬</td>
-<td>ટર્મિનલ સીલ</td>
-<td>______________________</td>
+<tr class="section">
+<td colspan="3">૬. સીલ ની વિગત</td>
 </tr>
 
 <tr>
-<td></td>
+<td width="30%">ટર્મિનલ સીલ</td>
+<td colspan="2">______________________</td>
+</tr>
+
+<tr>
 <td>SMC Box સીલ</td>
-<td>______________________</td>
+<td colspan="2">______________________</td>
 </tr>
 
 <tr>
-<td width="4%">૭</td>
-<td colspan="2">
-મીટર બોર્ડ __________ નંગ (TKJ / ZP Only)
-</td>
+<td colspan="3" class="section">૭. મીટર બોર્ડ</td>
 </tr>
 
 <tr>
-<td width="4%">૮</td>
-<td colspan="2">
+<td colspan="3">મીટર બોર્ડ __________ નંગ (TKJ / ZP Only)</td>
+</tr>
+
+<tr>
+<td colspan="3" class="section">૮. ઇન્સ્યુલેટર વિગતો</td>
+</tr>
+
+<tr>
+<td colspan="3">
 રીલ ઇન્સ્યુલેટર ______ નંગ | એગ ઇન્સ્યુલેટર ______ નંગ | GI વાયર 10 ______ મીટર
 </td>
 </tr>
 
 <tr>
-<td width="4%">૯</td>
-<td colspan="2">
+<td colspan="3" class="section">૯. અર્થિંગ</td>
+</tr>
+
+<tr>
+<td colspan="3">
 અરથીંગ વાયર ______ મીટર | અરથીંગ પાઇપ ______ નંગ
 </td>
 </tr>
 
 <tr>
-<td width="4%">૧૦</td>
-<td colspan="2">
+<td colspan="3" class="section">૧૦. મીટર પેટી</td>
+</tr>
+
+<tr>
+<td colspan="3">
 મીટર પેટી ની ઊંચાઈ ૫ ફિટ કરતાં વધારે નથી (હા/ના)? __________
 </td>
 </tr>
 
 <tr>
-<td></td>
-<td colspan="2">
+<td colspan="3">
 મીટર / મીટર પેટી / સીલિંગ તથા સર્વિસ લાઇન ગ્રાહક તરીકે સાચવવાની સંપૂર્ણ જવાબદારી મારી છે.
 </td>
 </tr>
 
 </table>
 
-<br>
+<br><br>
 
 <table>
 
 <tr>
-<td>ગ્રાહકની સહી</td>
-<td>કર્મચારી ની સહી</td>
-<td>જુ.ઇ. સહી</td>
-<td>ના.ઇ. સહી</td>
+<td style="text-align:center">ગ્રાહકની સહી</td>
+<td style="text-align:center">કર્મચારી ની સહી</td>
+<td style="text-align:center">જુ.ઇ. સહી</td>
+<td style="text-align:center">ના.ઇ. સહી</td>
 </tr>
 
 </table>
@@ -303,7 +317,6 @@ vertical-align:top;
 """
 
     return base64.b64encode(html.encode("utf-8")).decode()
-
 
 # ---------------------------------------------------
 # PROCESS FILE
