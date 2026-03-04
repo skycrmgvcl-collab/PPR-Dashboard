@@ -171,16 +171,6 @@ padding-top:24px;
 </tr>
 
 <tr>
-<td>FQ Amount</td>
-<td class="line">{row.get("FQ Amount","")}</td>
-</tr>
-
-<tr>
-<td>FQ Paid Date</td>
-<td class="line">{row.get("Date Of FQ Paid","")}</td>
-</tr>
-
-<tr>
 <td>ટેસ્ટ રીપોર્ટ તા.</td>
 <td class="line">{row.get("Date Of TR Recv","")}</td>
 </tr>
@@ -197,7 +187,7 @@ padding-top:24px;
 
 </table>
 
-<div class="section">૫. માલ સામાન વપરાશની નોંધ</div>
+<div class="section">માલ સામાન વપરાશની નોંધ</div>
 
 <div>
 સર્વિસ વાયર પી.વી.સી. ______ કોર ______ એમ.એમ. ______ મીટર
@@ -236,7 +226,7 @@ ELCB Make _________ &nbsp;&nbsp; Capacity _________
 
 <div class="box">
 
-<div class="box-title">૬. સીલ ની વિગત</div>
+<div class="box-title">સીલ ની વિગત</div>
 
 ટર્મિનલ સીલ : __________<br>
 SMC Box સીલ : __________
@@ -245,7 +235,7 @@ SMC Box સીલ : __________
 
 <div class="box">
 
-<div class="box-title">૭. મીટર બોર્ડ</div>
+<div class="box-title">મીટર બોર્ડ</div>
 
 મીટર બોર્ડ ______ નંગ
 
@@ -253,7 +243,7 @@ SMC Box સીલ : __________
 
 <div class="box">
 
-<div class="box-title">૮. ઇન્સ્યુલેટર</div>
+<div class="box-title">ઇન્સ્યુલેટર</div>
 
 રીલ ઇન્સ્યુલેટર ______<br>
 એગ ઇન્સ્યુલેટર ______<br>
@@ -263,10 +253,10 @@ GI વાયર 10 ______ મીટર
 
 <div class="box">
 
-<div class="box-title">૯–૧૦ અન્ય વિગતો</div>
+<div class="box-title">અન્ય વિગતો</div>
 
-અરથીંગ વાયર ______ મીટર<br>
-અરથીંગ પાઇપ ______ નંગ<br><br>
+અર્થિંગ વાયર ______ મીટર<br>
+અર્થિંગ પાઇપ ______ નંગ<br><br>
 
 મીટર પેટી ૫ ફિટ કરતાં વધારે નથી ? ______
 
