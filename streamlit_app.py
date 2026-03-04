@@ -35,32 +35,44 @@ def create_release_html(row):
 
 @page {{
 size:A4;
-margin:10mm;
+margin:8mm;
 }}
 
 body {{
 font-family:'Shruti','Nirmala UI';
-font-size:13px;
-line-height:1.25;
+font-size:12px;
+line-height:1.2;
 }}
 
 .header {{
 text-align:center;
 font-weight:bold;
-font-size:20px;
+font-size:18px;
 }}
 
 .subheader {{
 text-align:center;
-font-size:14px;
-margin-bottom:4px;
+font-size:13px;
 }}
 
 .title {{
 text-align:center;
 font-weight:bold;
-font-size:16px;
-margin-bottom:10px;
+font-size:14px;
+margin-bottom:4px;
+}}
+
+.container {{
+display:flex;
+gap:8px;
+}}
+
+.left {{
+width:60%;
+}}
+
+.right {{
+width:40%;
 }}
 
 table {{
@@ -69,7 +81,7 @@ border-collapse:collapse;
 }}
 
 td {{
-padding:4px;
+padding:3px;
 vertical-align:top;
 }}
 
@@ -79,19 +91,18 @@ display:inline-block;
 width:100%;
 }}
 
-.bold {{
-font-weight:bold;
-font-size:15px;
+.box {{
+border:1px solid black;
+padding:6px;
 }}
 
-.section {{
+.bold {{
 font-weight:bold;
-padding-top:6px;
 }}
 
 .signature td {{
 text-align:center;
-padding-top:20px;
+padding-top:18px;
 }}
 
 </style>
@@ -102,13 +113,18 @@ padding-top:20px;
 
 <div class="header">મધ્ય ગુજરાત વીજ કંપની લી.</div>
 <div class="subheader">વિરપુર</div>
-
 <div class="title">નવું કનેક્શન ચાલુ કર્યા અંગેનો રિપોર્ટ</div>
+
+<div class="container">
+
+<!-- LEFT SECTION -->
+
+<div class="left">
 
 <table>
 
 <tr>
-<td width="30%">ગ્રાહકનું નામ</td>
+<td width="35%">ગ્રાહકનું નામ</td>
 <td class="line">{row.get("Name Of Applicant","")}</td>
 </tr>
 
@@ -180,133 +196,132 @@ padding-top:20px;
 
 <br>
 
+<div class="bold">૫. માલ સામાન વપરાશની નોંધ</div>
+
+<div>
+સર્વિસ વાયર પી.વી.સી. ______ કોર ______ એમ.એમ. ______ મીટર
+</div>
+
+<div>
+ELCB Make _________ &nbsp;&nbsp; Capacity _________
+</div>
+
+<div>
+1-Ph SMC બોક્ષ ______ નંગ | 3-Ph SMC બોક્ષ ______ નંગ
+</div>
+
+</div>
+
+<!-- RIGHT SECTION -->
+
+<div class="right">
+
+<div class="box">
+
+<div class="bold">મીટર વિગતો</div>
+
 <table>
 
 <tr>
-<td colspan="2" class="section">૫. માલ સામાન વપરાશની નોંધ</td>
-</tr>
-
-<tr>
-<td colspan="2">
-(૧) સર્વિસ વાયર પી.વી.સી. ______ કોર ______ એમ.એમ. ______ મીટર
-</td>
-</tr>
-
-<tr>
-<td colspan="2">
-(૨) ELCB Make _________ &nbsp;&nbsp; Capacity _________
-</td>
-</tr>
-
-<tr>
-<td colspan="2">
-(૩) 1-Ph SMC બોક્ષ ______ નંગ &nbsp;&nbsp; | &nbsp;&nbsp; 3-Ph SMC બોક્ષ ______ નંગ
-</td>
-</tr>
-
-<tr>
-<td colspan="2" class="bold">મીટર વિગતો</td>
-</tr>
-
-<tr>
-<td width="50%">કંપની</td>
-<td>________________</td>
+<td>કંપની</td>
+<td>__________</td>
 </tr>
 
 <tr>
 <td>ટાઈપ</td>
-<td>________________</td>
+<td>__________</td>
 </tr>
 
 <tr>
 <td>કેપેસિટી</td>
-<td>________________</td>
+<td>__________</td>
 </tr>
 
 <tr>
 <td>આંટા</td>
-<td>________________</td>
+<td>__________</td>
 </tr>
 
 <tr>
 <td>મીટર નંબર</td>
-<td>________________</td>
+<td>__________</td>
 </tr>
 
 <tr>
 <td>લેબ નંબર</td>
-<td>________________</td>
+<td>__________</td>
 </tr>
 
 <tr>
 <td>રીડિંગ</td>
-<td>________________</td>
+<td>__________</td>
 </tr>
 
 <tr>
 <td>બોડી સીલ</td>
-<td>________________</td>
-</tr>
-
-<tr>
-<td colspan="2" class="section">૬. સીલ ની વિગત</td>
-</tr>
-
-<tr>
-<td>ટર્મિનલ સીલ</td>
-<td>________________</td>
-</tr>
-
-<tr>
-<td>SMC Box સીલ</td>
-<td>________________</td>
-</tr>
-
-<tr>
-<td colspan="2" class="section">૭. મીટર બોર્ડ</td>
-</tr>
-
-<tr>
-<td colspan="2">મીટર બોર્ડ __________ નંગ (TKJ / ZP Only)</td>
-</tr>
-
-<tr>
-<td colspan="2" class="section">૮. ઇન્સ્યુલેટર વિગતો</td>
-</tr>
-
-<tr>
-<td colspan="2">
-રીલ ઇન્સ્યુલેટર ______ નંગ | એગ ઇન્સ્યુલેટર ______ નંગ | GI વાયર 10 ______ મીટર
-</td>
-</tr>
-
-<tr>
-<td colspan="2" class="section">૯. અર્થિંગ</td>
-</tr>
-
-<tr>
-<td colspan="2">
-અરથીંગ વાયર ______ મીટર | અરથીંગ પાઇપ ______ નંગ
-</td>
-</tr>
-
-<tr>
-<td colspan="2" class="section">૧૦. મીટર પેટી</td>
-</tr>
-
-<tr>
-<td colspan="2">
-મીટર પેટી ની ઊંચાઈ ૫ ફિટ કરતાં વધારે નથી (હા/ના)? ______
-</td>
-</tr>
-
-<tr>
-<td colspan="2">
-મીટર / મીટર પેટી / સીલિંગ તથા સર્વિસ લાઇન ગ્રાહક તરીકે સાચવવાની સંપૂર્ણ જવાબદારી મારી છે.
-</td>
+<td>__________</td>
 </tr>
 
 </table>
+
+</div>
+
+<br>
+
+<div class="box">
+
+<div class="bold">૬. સીલ ની વિગત</div>
+
+<div>ટર્મિનલ સીલ : __________</div>
+<div>SMC Box સીલ : __________</div>
+
+</div>
+
+<br>
+
+<div class="box">
+
+<div class="bold">૭–૯ અન્ય વિગતો</div>
+
+<div>મીટર બોર્ડ ______ નંગ</div>
+
+<div>
+રીલ ઇન્સ્યુલેટર ______ | એગ ઇન્સ્યુલેટર ______
+</div>
+
+<div>
+GI વાયર 10 ______ મીટર
+</div>
+
+<div>
+અરથીંગ વાયર ______ મીટર
+</div>
+
+<div>
+અરથીંગ પાઇપ ______ નંગ
+</div>
+
+</div>
+
+<br>
+
+<div class="box">
+
+<div class="bold">૧૦. મીટર પેટી</div>
+
+<div>
+મીટર પેટી ની ઊંચાઈ ૫ ફિટ કરતાં વધારે નથી ? ______
+</div>
+
+<div>
+મીટર / મીટર પેટી / સીલિંગ તથા સર્વિસ લાઇન ગ્રાહક તરીકે સાચવવાની જવાબદારી મારી છે.
+</div>
+
+</div>
+
+</div>
+
+</div>
 
 <br>
 
@@ -326,7 +341,6 @@ padding-top:20px;
 """
 
     return base64.b64encode(html.encode()).decode()
-
 # ---------------------------------------------------------
 # PROCESS FILE
 # ---------------------------------------------------------
