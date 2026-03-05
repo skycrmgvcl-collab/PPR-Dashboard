@@ -5,13 +5,17 @@ import base64
 
 st.set_page_config(page_title="PPR Release Dashboard", layout="wide")
 
-st.title("💰 PPR Release Form Dashboard")
+st.title("⚡ PPR Release Monitoring Dashboard")
 
-file = st.file_uploader("Upload PPR File", type=["xlsx","xls","csv"])
+# ---------------------------------------------------------
+# FILE UPLOAD
+# ---------------------------------------------------------
+
+file = st.file_uploader("Upload PPR Excel / CSV", type=["xlsx","xls","csv"])
 
 
 # ---------------------------------------------------------
-# RELEASE FORM
+# RELEASE FORM HTML
 # ---------------------------------------------------------
 
 def create_release_html(row):
@@ -77,7 +81,7 @@ border-bottom:1px solid black;
 </tr>
 
 <tr>
-<td>Applicant</td>
+<td>Applicant Name</td>
 <td class="line">{row.get("Name Of Applicant","")}</td>
 </tr>
 
@@ -107,7 +111,7 @@ border-bottom:1px solid black;
 </tr>
 
 <tr>
-<td>Receipt No</td>
+<td>TR Receipt No</td>
 <td class="line">{row.get("TR MR No","")}</td>
 </tr>
 
@@ -138,23 +142,28 @@ border-bottom:1px solid black;
 
 
 # ---------------------------------------------------------
-# PROCESS FILE
+# MAIN PROGRAM
 # ---------------------------------------------------------
 
 if file:
 
+    # Read file
     if file.name.endswith(".csv"):
         df = pd.read_csv(file)
     else:
         df = pd.read_excel(file)
 
+    # Clean column names
     df.columns = df.columns.str.strip()
 
+    # Replace NULL text
+    df.replace("NULL", pd.NA, inplace=True)
+
+    # Serial number
     df.insert(0,"Sr No",range(1,len(df)+1))
 
-
 # ---------------------------------------------------------
-# SEARCH
+# SEARCH SR
 # ---------------------------------------------------------
 
     search = st.text_input("🔎 Search SR Number")
@@ -184,14 +193,6 @@ if file:
 
 
 # ---------------------------------------------------------
-# DATE CONVERSION
-# ---------------------------------------------------------
-
-    df["Date Of TR Recv"] = pd.to_datetime(df["Date Of TR Recv"],errors="coerce")
-    df["Date Of Release Conn"] = pd.to_datetime(df["Date Of Release Conn"],errors="coerce")
-
-
-# ---------------------------------------------------------
 # TABS
 # ---------------------------------------------------------
 
@@ -199,7 +200,7 @@ if file:
 
 
 # ---------------------------------------------------------
-# ALL RECORDS GRID
+# ALL RECORDS
 # ---------------------------------------------------------
 
     with tab1:
@@ -229,19 +230,18 @@ if file:
     with tab2:
 
         release_df = df[
-        (df["Date Of TR Recv"].notna()) &
-        (df["Date Of Release Conn"].isna())
+            (df["Date Of TR Recv"].notna()) &
+            (df["Date Of Release Conn"].isna())
         ].copy()
-
 
 # ---------------------------------------------------------
 # METRICS
 # ---------------------------------------------------------
 
-        c1,c2 = st.columns(2)
+        col1,col2 = st.columns(2)
 
-        c1.metric("Release Pending",len(release_df))
-        c2.metric("TR Received",release_df["Date Of TR Recv"].notna().sum())
+        col1.metric("Release Pending",len(release_df))
+        col2.metric("TR Received",release_df["Date Of TR Recv"].notna().sum())
 
 
 # ---------------------------------------------------------
@@ -249,9 +249,9 @@ if file:
 # ---------------------------------------------------------
 
         st.download_button(
-        "📥 Export Release Pending List",
-        release_df.to_csv(index=False),
-        file_name="release_pending.csv"
+            "📥 Export Release Pending List",
+            release_df.to_csv(index=False),
+            file_name="release_pending.csv"
         )
 
 
@@ -269,8 +269,8 @@ if file:
             b64 = base64.b64encode(html.encode()).decode()
 
             st.markdown(
-            f'<a href="data:text/html;base64,{b64}" target="_blank">Open Bulk Print</a>',
-            unsafe_allow_html=True
+                f'<a href="data:text/html;base64,{b64}" target="_blank">Open Bulk Print</a>',
+                unsafe_allow_html=True
             )
 
 
@@ -330,11 +330,11 @@ getGui(){return this.eGui;}
         gb.configure_column("release_html",hide=True)
 
         AgGrid(
-        release_df,
-        gridOptions=gb.build(),
-        allow_unsafe_jscode=True,
-        height=650,
-        fit_columns_on_grid_load=True
+            release_df,
+            gridOptions=gb.build(),
+            allow_unsafe_jscode=True,
+            height=650,
+            fit_columns_on_grid_load=True
         )
 
 else:
