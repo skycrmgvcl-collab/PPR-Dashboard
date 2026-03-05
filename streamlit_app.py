@@ -170,7 +170,7 @@ padding-top:28px;
 
 <tr>
 <td>ટેસ્ટ રીપોર્ટ તા.</td>
-<td class="line">{row.get("Date Of TR Recv","")}</td>
+<td class="line">{row.get("Date Of TR Revc","")}</td>
 </tr>
 
 <tr>
@@ -321,7 +321,7 @@ if file:
     with tab2:
 
         release_df=df[
-            (df["Date Of TR Recv"].notna()) &
+            (df["Date Of TR Revc"].notna()) &
             (df["Date Of Release Conn"].isna())
         ].copy()
 
