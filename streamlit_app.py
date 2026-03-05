@@ -9,6 +9,7 @@ st.title("💰 PPR Release Form Dashboard")
 
 file = st.file_uploader("Upload PPR File", type=["xlsx","xls","csv"])
 
+
 # ---------------------------------------------------------
 # RELEASE FORM
 # ---------------------------------------------------------
@@ -16,116 +17,122 @@ file = st.file_uploader("Upload PPR File", type=["xlsx","xls","csv"])
 def create_release_html(row):
 
     html=f"""
-    <html>
-    <head>
-    <meta charset="UTF-8">
-    <style>
+<html>
+<head>
+<meta charset="UTF-8">
 
-    @page {{ size:A4; margin:10mm; }}
+<style>
 
-    body {{
-    font-family:'Shruti','Nirmala UI';
-    font-size:14px;
-    }}
+@page {{
+size:A4;
+margin:10mm;
+}}
 
-    .header {{
-    text-align:center;
-    font-weight:bold;
-    font-size:22px;
-    }}
+body {{
+font-family:'Shruti','Nirmala UI';
+font-size:14px;
+}}
 
-    .title {{
-    text-align:center;
-    font-weight:bold;
-    font-size:18px;
-    margin-bottom:12px;
-    }}
+.header {{
+text-align:center;
+font-weight:bold;
+font-size:22px;
+}}
 
-    table {{
-    width:100%;
-    border-collapse:collapse;
-    }}
+.title {{
+text-align:center;
+font-weight:bold;
+font-size:18px;
+margin-bottom:12px;
+}}
 
-    td {{
-    padding:6px;
-    }}
+table {{
+width:100%;
+border-collapse:collapse;
+}}
 
-    .line {{
-    border-bottom:1px solid black;
-    }}
+td {{
+padding:6px;
+}}
 
-    </style>
-    </head>
+.line {{
+border-bottom:1px solid black;
+}}
 
-    <body onload="window.print()">
+</style>
 
-    <div class="header">મધ્ય ગુજરાત વીજ કંપની લી.</div>
-    <div class="title">નવું કનેક્શન ચાલુ કર્યા અંગેનો રિપોર્ટ</div>
+</head>
 
-    <table>
+<body onload="window.print()">
 
-    <tr>
-    <td width="35%">SR Number</td>
-    <td class="line">{row.get("SR Number","")}</td>
-    </tr>
+<div class="header">મધ્ય ગુજરાત વીજ કંપની લી.</div>
 
-    <tr>
-    <td>Applicant</td>
-    <td class="line">{row.get("Name Of Applicant","")}</td>
-    </tr>
+<div class="title">નવું કનેક્શન ચાલુ કર્યા અંગેનો રિપોર્ટ</div>
 
-    <tr>
-    <td>Scheme</td>
-    <td class="line">{row.get("Name Of Scheme","")}</td>
-    </tr>
+<table>
 
-    <tr>
-    <td>SR Type</td>
-    <td class="line">{row.get("SR Type","")}</td>
-    </tr>
+<tr>
+<td width="35%">SR Number</td>
+<td class="line">{row.get("SR Number","")}</td>
+</tr>
 
-    <tr>
-    <td>Load</td>
-    <td class="line">{row.get("Demand Load","")} {row.get("Load Uom","")}</td>
-    </tr>
+<tr>
+<td>Applicant</td>
+<td class="line">{row.get("Name Of Applicant","")}</td>
+</tr>
 
-    <tr>
-    <td>Survey Category</td>
-    <td class="line">{row.get("Survey Category","")}</td>
-    </tr>
+<tr>
+<td>Scheme</td>
+<td class="line">{row.get("Name Of Scheme","")}</td>
+</tr>
 
-    <tr>
-    <td>Test Report Date</td>
-    <td class="line">{row.get("Date Of TR Recv","")}</td>
-    </tr>
+<tr>
+<td>SR Type</td>
+<td class="line">{row.get("SR Type","")}</td>
+</tr>
 
-    <tr>
-    <td>Receipt No</td>
-    <td class="line">{row.get("TR MR No","")}</td>
-    </tr>
+<tr>
+<td>Load</td>
+<td class="line">{row.get("Demand Load","")} {row.get("Load Uom","")}</td>
+</tr>
 
-    </table>
+<tr>
+<td>Survey Category</td>
+<td class="line">{row.get("Survey Category","")}</td>
+</tr>
 
-    <br>
+<tr>
+<td>Test Report Date</td>
+<td class="line">{row.get("Date Of TR Recv","")}</td>
+</tr>
 
-    મીટર / મીટર પેટી / સીલિંગ તથા સર્વિસ લાઇન ગ્રાહક તરીકે સાચવવાની સંપૂર્ણ જવાબદારી મારી છે.
+<tr>
+<td>Receipt No</td>
+<td class="line">{row.get("TR MR No","")}</td>
+</tr>
 
-    <br><br>
+</table>
 
-    <table>
+<br>
 
-    <tr>
-    <td>ગ્રાહકની સહી</td>
-    <td>કર્મચારી ની સહી</td>
-    <td>જુ.ઇ. સહી</td>
-    <td>ના.ઇ. સહી</td>
-    </tr>
+મીટર / મીટર પેટી / સીલિંગ તથા સર્વિસ લાઇન ગ્રાહક તરીકે સાચવવાની સંપૂર્ણ જવાબદારી મારી છે.
 
-    </table>
+<br><br>
 
-    </body>
-    </html>
-    """
+<table>
+
+<tr>
+<td>ગ્રાહકની સહી</td>
+<td>કર્મચારી ની સહી</td>
+<td>જુ.ઇ. સહી</td>
+<td>ના.ઇ. સહી</td>
+</tr>
+
+</table>
+
+</body>
+</html>
+"""
 
     return base64.b64encode(html.encode()).decode()
 
@@ -145,6 +152,7 @@ if file:
 
     df.insert(0,"Sr No",range(1,len(df)+1))
 
+
 # ---------------------------------------------------------
 # SEARCH
 # ---------------------------------------------------------
@@ -153,6 +161,7 @@ if file:
 
     if search:
         df = df[df["SR Number"].astype(str).str.contains(search)]
+
 
 # ---------------------------------------------------------
 # FILTERS
@@ -173,13 +182,14 @@ if file:
     if sr!="All":
         df = df[df["SR Type"]==sr]
 
+
 # ---------------------------------------------------------
 # DATE CONVERSION
 # ---------------------------------------------------------
 
     df["Date Of TR Recv"] = pd.to_datetime(df["Date Of TR Recv"],errors="coerce")
-
     df["Date Of Release Conn"] = pd.to_datetime(df["Date Of Release Conn"],errors="coerce")
+
 
 # ---------------------------------------------------------
 # TABS
@@ -187,13 +197,30 @@ if file:
 
     tab1,tab2 = st.tabs(["All Records","Release Pending"])
 
+
 # ---------------------------------------------------------
-# ALL RECORDS
+# ALL RECORDS GRID
 # ---------------------------------------------------------
 
     with tab1:
 
-        AgGrid(df,height=600,fit_columns_on_grid_load=True)
+        gb_all = GridOptionsBuilder.from_dataframe(df)
+
+        gb_all.configure_default_column(
+            filter=True,
+            sortable=True,
+            resizable=True,
+            flex=1,
+            minWidth=130
+        )
+
+        AgGrid(
+            df,
+            gridOptions=gb_all.build(),
+            height=650,
+            fit_columns_on_grid_load=True
+        )
+
 
 # ---------------------------------------------------------
 # RELEASE PENDING
@@ -206,19 +233,16 @@ if file:
         (df["Date Of Release Conn"].isna())
         ].copy()
 
-        today = pd.Timestamp.today()
-
-        release_df["Aging Days"] = (today - release_df["Date Of TR Recv"]).dt.days
 
 # ---------------------------------------------------------
 # METRICS
 # ---------------------------------------------------------
 
-        c1,c2,c3 = st.columns(3)
+        c1,c2 = st.columns(2)
 
         c1.metric("Release Pending",len(release_df))
         c2.metric("TR Received",release_df["Date Of TR Recv"].notna().sum())
-        c3.metric("Average Aging",int(release_df["Aging Days"].mean()) if len(release_df)>0 else 0)
+
 
 # ---------------------------------------------------------
 # EXPORT
@@ -229,6 +253,7 @@ if file:
         release_df.to_csv(index=False),
         file_name="release_pending.csv"
         )
+
 
 # ---------------------------------------------------------
 # BULK PRINT
@@ -247,6 +272,7 @@ if file:
             f'<a href="data:text/html;base64,{b64}" target="_blank">Open Bulk Print</a>',
             unsafe_allow_html=True
             )
+
 
 # ---------------------------------------------------------
 # PRINT ICON
@@ -292,10 +318,15 @@ getGui(){return this.eGui;}
 
         gb = GridOptionsBuilder.from_dataframe(release_df)
 
-        gb.configure_default_column(filter=True,sortable=True,resizable=True)
+        gb.configure_default_column(
+            filter=True,
+            sortable=True,
+            resizable=True,
+            flex=1,
+            minWidth=130
+        )
 
         gb.configure_column("Print",cellRenderer=renderer,width=70)
-
         gb.configure_column("release_html",hide=True)
 
         AgGrid(
