@@ -7,20 +7,19 @@ st.set_page_config(page_title="PPR Release Dashboard", layout="wide")
 
 st.title("⚡ PPR Release Monitoring Dashboard")
 
-# ---------------------------------------------------------
+# ----------------------------------------------------
 # FILE UPLOAD
-# ---------------------------------------------------------
+# ----------------------------------------------------
 
 file = st.file_uploader("Upload PPR Excel / CSV", type=["xlsx","xls","csv"])
 
-
-# ---------------------------------------------------------
-# RELEASE FORM HTML
-# ---------------------------------------------------------
+# ----------------------------------------------------
+# RELEASE FORM
+# ----------------------------------------------------
 
 def create_release_html(row):
 
-    html=f"""
+    html = f"""
 <html>
 <head>
 <meta charset="UTF-8">
@@ -47,7 +46,7 @@ font-size:22px;
 text-align:center;
 font-weight:bold;
 font-size:18px;
-margin-bottom:12px;
+margin-bottom:10px;
 }}
 
 table {{
@@ -86,6 +85,11 @@ border-bottom:1px solid black;
 </tr>
 
 <tr>
+<td>Village</td>
+<td class="line">{row.get("Village Or City","")}</td>
+</tr>
+
+<tr>
 <td>Scheme</td>
 <td class="line">{row.get("Name Of Scheme","")}</td>
 </tr>
@@ -106,12 +110,12 @@ border-bottom:1px solid black;
 </tr>
 
 <tr>
-<td>Test Report Date</td>
+<td>TR Date</td>
 <td class="line">{row.get("Date Of TR Recv","")}</td>
 </tr>
 
 <tr>
-<td>TR Receipt No</td>
+<td>TR MR No</td>
 <td class="line">{row.get("TR MR No","")}</td>
 </tr>
 
@@ -141,43 +145,39 @@ border-bottom:1px solid black;
     return html
 
 
-# ---------------------------------------------------------
+# ----------------------------------------------------
 # MAIN PROGRAM
-# ---------------------------------------------------------
+# ----------------------------------------------------
 
 if file:
 
-    # Read file
+    # READ FILE
+
     if file.name.endswith(".csv"):
         df = pd.read_csv(file)
     else:
         df = pd.read_excel(file)
 
+    # CLEAN HEADERS
+
     df.columns = df.columns.str.strip()
 
-    # Replace NULL text
-    df.replace("NULL", "", inplace=True)
+    df.replace("NULL","", inplace=True)
 
-    # Fill NaN
     df = df.fillna("")
 
-    # Serial number
-    df.insert(0,"Sr No",range(1,len(df)+1))
-
-
-# ---------------------------------------------------------
+# ----------------------------------------------------
 # SEARCH
-# ---------------------------------------------------------
+# ----------------------------------------------------
 
     search = st.text_input("🔎 Search SR Number")
 
     if search:
         df = df[df["SR Number"].astype(str).str.contains(search,case=False)]
 
-
-# ---------------------------------------------------------
-# FILTERS
-# ---------------------------------------------------------
+# ----------------------------------------------------
+# SIDEBAR FILTERS
+# ----------------------------------------------------
 
     schemes = sorted(df["Name Of Scheme"].unique())
 
@@ -194,109 +194,96 @@ if file:
     if sr!="All":
         df = df[df["SR Type"]==sr]
 
+# ----------------------------------------------------
+# RELEASE PENDING LOGIC
+# ----------------------------------------------------
 
-# ---------------------------------------------------------
-# TABS
-# ---------------------------------------------------------
+    release_df = df[
+        (df["Date Of TR Recv"].astype(str).str.strip()!="") &
+        ((df["Date Of Release Conn"].astype(str).str.strip()=="") |
+         (df["Date Of Release Conn"].isna())) &
+        (df["SR Status"].astype(str).str.upper()=="OPEN")
+    ].copy()
 
-    tab1,tab2 = st.tabs(["All Records","Release Pending"])
+# ----------------------------------------------------
+# SUMMARY METRICS
+# ----------------------------------------------------
 
+    col1,col2 = st.columns(2)
 
-# ---------------------------------------------------------
-# ALL RECORDS GRID
-# ---------------------------------------------------------
+    col1.metric("Release Pending",len(release_df))
+    col2.metric("TR Received",(df["Date Of TR Recv"].astype(str).str.strip()!="").sum())
 
-    with tab1:
+# ----------------------------------------------------
+# DISPLAY COLUMNS
+# ----------------------------------------------------
 
-        gb_all = GridOptionsBuilder.from_dataframe(df)
+    display_cols = [
+        "SR Number",
+        "Name Of Applicant",
+        "Village Or City",
+        "SR Type",
+        "Name Of Scheme",
+        "Demand Load",
+        "Survey Category",
+        "Date Of TR Recv",
+        "TR MR No",
+        "Date Of Release Conn",
+        "Consumer No",
+        "SR Status"
+    ]
 
-        gb_all.configure_default_column(
-            filter=True,
-            sortable=True,
-            resizable=True,
-            flex=1,
-            minWidth=130
-        )
+    display_cols = [c for c in display_cols if c in release_df.columns]
 
-        AgGrid(
-            df,
-            gridOptions=gb_all.build(),
-            height=650,
-            fit_columns_on_grid_load=True
-        )
+    release_display = release_df[display_cols]
 
+# ----------------------------------------------------
+# GRID DISPLAY
+# ----------------------------------------------------
 
-# ---------------------------------------------------------
-# RELEASE PENDING
-# ---------------------------------------------------------
+    gb = GridOptionsBuilder.from_dataframe(release_display)
 
-    with tab2:
+    gb.configure_default_column(
+        filter=True,
+        sortable=True,
+        resizable=True,
+        flex=1,
+        minWidth=120
+    )
 
-        release_df = df[
-            (df["Date Of TR Recv"]!="") &
-            (df["Date Of Release Conn"]=="")
-        ].copy()
+    AgGrid(
+        release_display,
+        gridOptions=gb.build(),
+        height=650,
+        fit_columns_on_grid_load=True
+    )
 
+# ----------------------------------------------------
+# EXPORT BUTTON
+# ----------------------------------------------------
 
-# ---------------------------------------------------------
-# METRICS
-# ---------------------------------------------------------
+    st.download_button(
+        "📥 Export Release Pending List",
+        release_display.to_csv(index=False),
+        file_name="release_pending.csv"
+    )
 
-        col1,col2 = st.columns(2)
+# ----------------------------------------------------
+# BULK RELEASE FORM PRINT
+# ----------------------------------------------------
 
-        col1.metric("Release Pending",len(release_df))
-        col2.metric("TR Received",(df["Date Of TR Recv"]!="").sum())
+    if st.button("🖨 Generate Release Forms"):
 
+        html = ""
 
-# ---------------------------------------------------------
-# EXPORT
-# ---------------------------------------------------------
+        for _,row in release_df.iterrows():
+            html += create_release_html(row)
 
-        st.download_button(
-            "📥 Export Release Pending List",
-            release_df.to_csv(index=False),
-            file_name="release_pending.csv"
-        )
+        b64 = base64.b64encode(html.encode()).decode()
 
-
-# ---------------------------------------------------------
-# BULK PRINT
-# ---------------------------------------------------------
-
-        if st.button("🖨 Generate Release Forms"):
-
-            html=""
-
-            for _,row in release_df.iterrows():
-                html += create_release_html(row)
-
-            b64 = base64.b64encode(html.encode()).decode()
-
-            st.markdown(
-                f'<a href="data:text/html;base64,{b64}" target="_blank">Open Release Forms</a>',
-                unsafe_allow_html=True
-            )
-
-
-# ---------------------------------------------------------
-# RELEASE PENDING GRID
-# ---------------------------------------------------------
-
-        gb = GridOptionsBuilder.from_dataframe(release_df)
-
-        gb.configure_default_column(
-            filter=True,
-            sortable=True,
-            resizable=True,
-            flex=1,
-            minWidth=130
-        )
-
-        AgGrid(
-            release_df,
-            gridOptions=gb.build(),
-            height=650,
-            fit_columns_on_grid_load=True
+        st.markdown(
+            f'<a href="data:text/html;base64,{b64}" target="_blank">Open Release Forms</a>',
+            unsafe_allow_html=True
         )
 
 else:
