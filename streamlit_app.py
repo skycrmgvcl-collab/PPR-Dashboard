@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from st_aggrid import AgGrid, GridOptionsBuilder, JsCode
+from st_aggrid import AgGrid, GridOptionsBuilder
 import base64
 
 st.set_page_config(page_title="PPR Release Dashboard", layout="wide")
@@ -138,7 +138,7 @@ border-bottom:1px solid black;
 </html>
 """
 
-    return base64.b64encode(html.encode()).decode()
+    return html
 
 
 # ---------------------------------------------------------
@@ -153,18 +153,20 @@ if file:
     else:
         df = pd.read_excel(file)
 
-    # Clean column names
     df.columns = df.columns.str.strip()
 
-    # Convert "NULL" text to actual null
-    df.replace("NULL", pd.NA, inplace=True)
+    # Replace NULL text
+    df.replace("NULL", "", inplace=True)
 
-    # Serial number column
+    # Fill NaN
+    df = df.fillna("")
+
+    # Serial number
     df.insert(0,"Sr No",range(1,len(df)+1))
 
 
 # ---------------------------------------------------------
-# SEARCH SR NUMBER
+# SEARCH
 # ---------------------------------------------------------
 
     search = st.text_input("🔎 Search SR Number")
@@ -177,7 +179,7 @@ if file:
 # FILTERS
 # ---------------------------------------------------------
 
-    schemes = sorted(df["Name Of Scheme"].dropna().unique())
+    schemes = sorted(df["Name Of Scheme"].unique())
 
     scheme = st.sidebar.selectbox("Name Of Scheme",["All"]+schemes)
 
@@ -185,7 +187,7 @@ if file:
         df = df[df["Name Of Scheme"]==scheme]
 
 
-    sr_types = sorted(df["SR Type"].dropna().unique())
+    sr_types = sorted(df["SR Type"].unique())
 
     sr = st.sidebar.selectbox("SR Type",["All"]+sr_types)
 
@@ -201,7 +203,7 @@ if file:
 
 
 # ---------------------------------------------------------
-# ALL RECORDS
+# ALL RECORDS GRID
 # ---------------------------------------------------------
 
     with tab1:
@@ -231,9 +233,8 @@ if file:
     with tab2:
 
         release_df = df[
-            df["Date Of TR Recv"].notna() &
-            (df["Date Of Release Conn"].isna() |
-             (df["Date Of Release Conn"].astype(str).str.strip()==""))
+            (df["Date Of TR Recv"]!="") &
+            (df["Date Of Release Conn"]=="")
         ].copy()
 
 
@@ -244,7 +245,7 @@ if file:
         col1,col2 = st.columns(2)
 
         col1.metric("Release Pending",len(release_df))
-        col2.metric("TR Received",df["Date Of TR Recv"].notna().sum())
+        col2.metric("TR Received",(df["Date Of TR Recv"]!="").sum())
 
 
 # ---------------------------------------------------------
@@ -262,62 +263,24 @@ if file:
 # BULK PRINT
 # ---------------------------------------------------------
 
-        if st.button("🖨 Bulk Print Release Forms"):
+        if st.button("🖨 Generate Release Forms"):
 
             html=""
 
             for _,row in release_df.iterrows():
-                html += base64.b64decode(create_release_html(row)).decode()
+                html += create_release_html(row)
 
             b64 = base64.b64encode(html.encode()).decode()
 
             st.markdown(
-                f'<a href="data:text/html;base64,{b64}" target="_blank">Open Bulk Print</a>',
+                f'<a href="data:text/html;base64,{b64}" target="_blank">Open Release Forms</a>',
                 unsafe_allow_html=True
             )
 
 
 # ---------------------------------------------------------
-# PRINT ICON
+# RELEASE PENDING GRID
 # ---------------------------------------------------------
-
-        release_df["release_html"] = release_df.apply(create_release_html,axis=1)
-
-        release_df.insert(1,"Print","")
-
-        renderer = JsCode("""
-
-class Renderer{
-
-init(params){
-
-this.eGui=document.createElement('span');
-this.eGui.innerHTML='🖨';
-this.eGui.style.cursor='pointer';
-
-this.eGui.addEventListener('click',()=>{
-
-const b64=params.data.release_html;
-
-const win=window.open("","_blank");
-
-const bytes=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));
-
-const html=new TextDecoder("utf-8").decode(bytes);
-
-win.document.write(html);
-
-win.document.close();
-
-});
-
-}
-
-getGui(){return this.eGui;}
-
-}
-
-""")
 
         gb = GridOptionsBuilder.from_dataframe(release_df)
 
@@ -329,13 +292,9 @@ getGui(){return this.eGui;}
             minWidth=130
         )
 
-        gb.configure_column("Print",cellRenderer=renderer,width=70)
-        gb.configure_column("release_html",hide=True)
-
         AgGrid(
             release_df,
             gridOptions=gb.build(),
-            allow_unsafe_jscode=True,
             height=650,
             fit_columns_on_grid_load=True
         )
