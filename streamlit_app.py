@@ -41,7 +41,6 @@ margin:8mm;
 body {{
 font-family:'Shruti','Nirmala UI';
 font-size:14px;
-line-height:1.25;
 }}
 
 .header {{
@@ -59,7 +58,7 @@ font-size:16px;
 text-align:center;
 font-weight:bold;
 font-size:17px;
-margin-bottom:8px;
+margin-bottom:10px;
 }}
 
 table {{
@@ -85,13 +84,13 @@ font-size:16px;
 
 .section {{
 font-weight:bold;
-margin-top:6px;
+margin-top:8px;
 }}
 
 .box-row {{
 display:flex;
 gap:8px;
-margin-top:8px;
+margin-top:10px;
 }}
 
 .box {{
@@ -105,12 +104,11 @@ font-size:13px;
 font-weight:bold;
 border-bottom:1px solid black;
 margin-bottom:6px;
-padding-bottom:3px;
 }}
 
 .signature td {{
 text-align:center;
-padding-top:24px;
+padding-top:28px;
 }}
 
 </style>
@@ -235,14 +233,6 @@ SMC Box સીલ : __________
 
 <div class="box">
 
-<div class="box-title">મીટર બોર્ડ</div>
-
-મીટર બોર્ડ ______ નંગ
-
-</div>
-
-<div class="box">
-
 <div class="box-title">ઇન્સ્યુલેટર</div>
 
 રીલ ઇન્સ્યુલેટર ______<br>
@@ -253,12 +243,10 @@ GI વાયર 10 ______ મીટર
 
 <div class="box">
 
-<div class="box-title">અન્ય વિગતો</div>
+<div class="box-title">અર્થિંગ</div>
 
 અર્થિંગ વાયર ______ મીટર<br>
-અર્થિંગ પાઇપ ______ નંગ<br><br>
-
-મીટર પેટી ૫ ફિટ કરતાં વધારે નથી ? ______
+અર્થિંગ પાઇપ ______ નંગ
 
 </div>
 
@@ -266,7 +254,7 @@ GI વાયર 10 ______ મીટર
 
 <br>
 
-<div style="font-size:13px;margin-top:6px;">
+<div style="font-size:13px;">
 મીટર / મીટર પેટી / સીલિંગ તથા સર્વિસ લાઇન ગ્રાહક તરીકે સાચવવાની સંપૂર્ણ જવાબદારી મારી છે.
 </div>
 
@@ -288,6 +276,8 @@ GI વાયર 10 ______ મીટર
 """
 
     return base64.b64encode(html.encode()).decode()
+
+
 # ---------------------------------------------------------
 # PROCESS FILE
 # ---------------------------------------------------------
@@ -298,28 +288,48 @@ if file:
 
     df.insert(0,"Sr No",range(1,len(df)+1))
 
-    sr_types=sorted(df["SR Type"].dropna().unique())
-    selected_sr=st.sidebar.multiselect("SR Type",sr_types,default=sr_types)
-
-    df=df[df["SR Type"].isin(selected_sr)]
-
+    # SCHEME FILTER FIRST
     schemes=sorted(df["Name Of Scheme"].dropna().unique())
-    selected_scheme=st.sidebar.multiselect("Name Of Scheme",schemes,default=schemes)
+    scheme=st.sidebar.selectbox("Name Of Scheme",["All"]+schemes)
 
-    df=df[df["Name Of Scheme"].isin(selected_scheme)]
+    if scheme!="All":
+        df=df[df["Name Of Scheme"]==scheme]
 
-    def generate_print(row):
+    # SR TYPE FILTER SECOND
+    sr_types=sorted(df["SR Type"].dropna().unique())
+    sr=st.sidebar.selectbox("SR Type",["All"]+sr_types)
 
-        if pd.notna(row.get("Date Of TR Recv")) and pd.notna(row.get("TR MR No")):
-            return create_release_html(row)
+    if sr!="All":
+        df=df[df["SR Type"]==sr]
 
-        return ""
+    # ---------------------------------------------------------
+    # TABS
+    # ---------------------------------------------------------
 
-    df["release_html"]=df.apply(generate_print,axis=1)
+    tab1,tab2=st.tabs(["All Records","Release Pending"])
 
-    df.insert(1,"Print","")
+    # ---------------- ALL RECORDS ----------------
 
-    renderer=JsCode("""
+    with tab1:
+
+        st.subheader("All Records")
+
+        AgGrid(df,height=600)
+
+    # ---------------- RELEASE PENDING ----------------
+
+    with tab2:
+
+        release_df=df[
+            (df["Date Of TR Recv"].notna()) &
+            (df["Date Of Release Conn"].isna())
+        ].copy()
+
+        release_df["release_html"]=release_df.apply(create_release_html,axis=1)
+
+        release_df.insert(1,"Print","")
+
+        renderer=JsCode("""
 
 class Renderer{
 
@@ -331,13 +341,12 @@ this.eGui.style.cursor='pointer';
 
 this.eGui.addEventListener('click',()=>{
 
-const b64=params.data.release_html;
-
-if(b64=="") return;
-
 const win=window.open("","_blank");
 
+const b64=params.data.release_html;
+
 const bytes=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));
+
 const html=new TextDecoder("utf-8").decode(bytes);
 
 win.document.write(html);
@@ -350,22 +359,22 @@ win.document.close();
 getGui(){return this.eGui;}
 
 }
+
 """)
 
-    gb=GridOptionsBuilder.from_dataframe(df)
+        gb=GridOptionsBuilder.from_dataframe(release_df)
 
-    gb.configure_default_column(filter=True,sortable=True,resizable=True,flex=1,minWidth=120)
+        gb.configure_default_column(filter=True,sortable=True,resizable=True)
 
-    gb.configure_column("Print",cellRenderer=renderer,width=70)
-    gb.configure_column("release_html",hide=True)
+        gb.configure_column("Print",cellRenderer=renderer,width=70)
+        gb.configure_column("release_html",hide=True)
 
-    AgGrid(
-        df,
-        gridOptions=gb.build(),
-        allow_unsafe_jscode=True,
-        fit_columns_on_grid_load=True,
-        height=650
-    )
+        AgGrid(
+            release_df,
+            gridOptions=gb.build(),
+            allow_unsafe_jscode=True,
+            height=650
+        )
 
 else:
 
