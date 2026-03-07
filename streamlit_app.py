@@ -7,9 +7,31 @@ st.set_page_config(page_title="PPR Monitoring Dashboard", layout="wide")
 
 st.title("⚡ PPR Monitoring Dashboard")
 
-# ---------------------------------------------------
+# -------------------------------------------------------
+# CACHE FILE LOADING (FAST FOR LARGE FILES)
+# -------------------------------------------------------
+
+@st.cache_data
+def load_file(file):
+
+    if file.name.endswith(".csv"):
+        df = pd.read_csv(file, low_memory=False)
+    else:
+        df = pd.read_excel(file)
+
+    df.columns = df.columns.str.strip()
+
+    df.replace("NULL","",inplace=True)
+    df.fillna("", inplace=True)
+
+    df=df.astype(str)
+
+    return df
+
+
+# -------------------------------------------------------
 # RELEASE FORM HTML
-# ---------------------------------------------------
+# -------------------------------------------------------
 
 def create_release_html(row):
 
@@ -18,6 +40,7 @@ def create_release_html(row):
 <html>
 <head>
 <meta charset="UTF-8">
+
 <style>
 
 @page {{ size:A4; margin:8mm; }}
@@ -36,6 +59,7 @@ td {{padding:6px;}}
 .line {{border-bottom:1px solid black;width:100%;display:inline-block;}}
 
 </style>
+
 </head>
 
 <body onload="window.print()">
@@ -90,27 +114,19 @@ td {{padding:6px;}}
     return base64.b64encode(html.encode()).decode()
 
 
-# ---------------------------------------------------
+# -------------------------------------------------------
 # FILE UPLOAD
-# ---------------------------------------------------
+# -------------------------------------------------------
 
 file = st.file_uploader("Upload PPR Excel / CSV", type=["xlsx","xls","csv"])
 
 if file:
 
-    if file.name.endswith(".csv"):
-        df=pd.read_csv(file)
-    else:
-        df=pd.read_excel(file)
+    df = load_file(file)
 
-    df.columns=df.columns.str.strip()
-
-    df.replace("NULL","",inplace=True)
-    df=df.fillna("")
-
-# ---------------------------------------------------
+# -------------------------------------------------------
 # SIDEBAR FILTERS
-# ---------------------------------------------------
+# -------------------------------------------------------
 
     st.sidebar.header("Filters")
 
@@ -129,24 +145,52 @@ if file:
 
     df=df[df["Survey Category"].isin(selected_survey)]
 
-# ---------------------------------------------------
+# -------------------------------------------------------
 # SEARCH
-# ---------------------------------------------------
+# -------------------------------------------------------
 
     search=st.text_input("🔎 Search SR Number")
 
     if search:
-        df=df[df["SR Number"].astype(str).str.contains(search)]
+        df=df[df["SR Number"].str.contains(search)]
 
-# ---------------------------------------------------
+# -------------------------------------------------------
 # ONLY OPEN SR
-# ---------------------------------------------------
+# -------------------------------------------------------
 
-    df=df[df["SR Status"].astype(str).str.upper()=="OPEN"]
+    df=df[df["SR Status"].str.upper()=="OPEN"]
 
-# ---------------------------------------------------
+# -------------------------------------------------------
+# GRID CONFIG FUNCTION
+# -------------------------------------------------------
+
+    def show_grid(data,key):
+
+        gb = GridOptionsBuilder.from_dataframe(data)
+
+        gb.configure_default_column(
+            filter=True,
+            sortable=True,
+            resizable=True
+        )
+
+        gb.configure_pagination(
+            paginationAutoPageSize=False,
+            paginationPageSize=50
+        )
+
+        return AgGrid(
+            data,
+            gridOptions=gb.build(),
+            height=650,
+            fit_columns_on_grid_load=True,
+            key=key
+        )
+
+
+# -------------------------------------------------------
 # TABS
-# ---------------------------------------------------
+# -------------------------------------------------------
 
     tab1,tab2,tab3,tab4=st.tabs([
         "Paid Pending Report",
@@ -155,9 +199,9 @@ if file:
         "All Records"
     ])
 
-# ---------------------------------------------------
+# -------------------------------------------------------
 # TAB 1 : PAID PENDING
-# ---------------------------------------------------
+# -------------------------------------------------------
 
     with tab1:
 
@@ -165,21 +209,12 @@ if file:
 
         st.metric("Paid Pending",len(ppr_df))
 
-        gb=GridOptionsBuilder.from_dataframe(ppr_df)
+        show_grid(ppr_df,"ppr_grid")
 
-        gb.configure_default_column(filter=True,sortable=True,resizable=True,flex=1,minWidth=140)
 
-        AgGrid(
-            ppr_df,
-            gridOptions=gb.build(),
-            height=650,
-            fit_columns_on_grid_load=True,
-            key="ppr_grid"
-        )
-
-# ---------------------------------------------------
+# -------------------------------------------------------
 # TAB 2 : TMN PENDING
-# ---------------------------------------------------
+# -------------------------------------------------------
 
     with tab2:
 
@@ -190,21 +225,12 @@ if file:
 
         st.metric("TMN Pending",len(tmn_df))
 
-        gb=GridOptionsBuilder.from_dataframe(tmn_df)
+        show_grid(tmn_df,"tmn_grid")
 
-        gb.configure_default_column(filter=True,sortable=True,resizable=True,flex=1,minWidth=140)
 
-        AgGrid(
-            tmn_df,
-            gridOptions=gb.build(),
-            height=650,
-            fit_columns_on_grid_load=True,
-            key="tmn_grid"
-        )
-
-# ---------------------------------------------------
+# -------------------------------------------------------
 # TAB 3 : RELEASE PENDING
-# ---------------------------------------------------
+# -------------------------------------------------------
 
     with tab3:
 
@@ -250,17 +276,21 @@ getGui(){return this.eGui;}
 }
 """)
 
-        grid_df=release_df.copy()
+        gb=GridOptionsBuilder.from_dataframe(release_df)
 
-        gb=GridOptionsBuilder.from_dataframe(grid_df)
+        gb.configure_default_column(
+            filter=True,
+            sortable=True,
+            resizable=True
+        )
 
-        gb.configure_default_column(filter=True,sortable=True,resizable=True,flex=1,minWidth=140)
+        gb.configure_pagination(paginationPageSize=50)
 
         gb.configure_column("Print",cellRenderer=renderer,width=70)
         gb.configure_column("release_html",hide=True)
 
         AgGrid(
-            grid_df,
+            release_df,
             gridOptions=gb.build(),
             allow_unsafe_jscode=True,
             height=650,
@@ -268,25 +298,17 @@ getGui(){return this.eGui;}
             key="release_grid"
         )
 
-# ---------------------------------------------------
+
+# -------------------------------------------------------
 # TAB 4 : ALL RECORDS
-# ---------------------------------------------------
+# -------------------------------------------------------
 
     with tab4:
 
         st.metric("Total Records",len(df))
 
-        gb=GridOptionsBuilder.from_dataframe(df)
+        show_grid(df,"all_grid")
 
-        gb.configure_default_column(filter=True,sortable=True,resizable=True,flex=1,minWidth=140)
-
-        AgGrid(
-            df,
-            gridOptions=gb.build(),
-            height=650,
-            fit_columns_on_grid_load=True,
-            key="all_grid"
-        )
 
 else:
 
