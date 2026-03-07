@@ -8,7 +8,7 @@ st.set_page_config(page_title="PPR Monitoring Dashboard", layout="wide")
 st.title("⚡ PPR Monitoring Dashboard")
 
 # ---------------------------------------------------
-# LOAD FILE
+# FILE LOAD (CACHE)
 # ---------------------------------------------------
 
 @st.cache_data
@@ -28,39 +28,83 @@ def load_file(file):
 
 
 # ---------------------------------------------------
-# RELEASE FORM
+# CLEAN DATAFRAME (IMPORTANT)
+# ---------------------------------------------------
+
+def clean_dataframe(df):
+
+    df = df.copy()
+
+    df = df.fillna("")
+
+    df = df.astype(str)
+
+    # remove tabs / newline characters
+    df = df.replace(r'[\t\r\n]+', ' ', regex=True)
+
+    # trim spaces
+    df = df.applymap(lambda x: x.strip())
+
+    return df
+
+
+# ---------------------------------------------------
+# RELEASE FORM HTML
 # ---------------------------------------------------
 
 def create_release_html(row):
 
     html=f"""
+<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
+
 <style>
-body{{font-family:'Shruti';font-size:14px}}
+
+@page {{ size:A4; margin:8mm; }}
+
+body {{
+font-family:'Shruti','Nirmala UI';
+font-size:14px;
+}}
+
+.header {{text-align:center;font-weight:bold;font-size:22px}}
+.title {{text-align:center;font-weight:bold;font-size:18px}}
+
+table {{width:100%;border-collapse:collapse}}
+td {{padding:6px}}
+
 </style>
+
 </head>
 
 <body onload="window.print()">
 
-<h2 style="text-align:center">મધ્ય ગુજરાત વીજ કંપની લી.</h2>
-<h3 style="text-align:center">નવું કનેક્શન ચાલુ કર્યા અંગેનો રિપોર્ટ</h3>
+<div class="header">મધ્ય ગુજરાત વીજ કંપની લી.</div>
+<div class="title">નવું કનેક્શન ચાલુ કર્યા અંગેનો રિપોર્ટ</div>
 
-<table width="100%" border="0">
+<br>
 
-<tr><td>SR Number</td><td>{row["SR Number"]}</td></tr>
-<tr><td>Name</td><td>{row["Name Of Applicant"]}</td></tr>
-<tr><td>Village</td><td>{row["Village Or City"]}</td></tr>
-<tr><td>Scheme</td><td>{row["Name Of Scheme"]}</td></tr>
-<tr><td>Load</td><td>{row["Demand Load"]} {row["Load Uom"]}</td></tr>
-<tr><td>TR MR No</td><td>{row["TR MR No"]}</td></tr>
+<table>
+
+<tr><td width="30%">SR Number</td><td>{row.get("SR Number","")}</td></tr>
+
+<tr><td>Name</td><td>{row.get("Name Of Applicant","")}</td></tr>
+
+<tr><td>Village</td><td>{row.get("Village Or City","")}</td></tr>
+
+<tr><td>Scheme</td><td>{row.get("Name Of Scheme","")}</td></tr>
+
+<tr><td>Load</td><td>{row.get("Demand Load","")} {row.get("Load Uom","")}</td></tr>
+
+<tr><td>TR MR No</td><td>{row.get("TR MR No","")}</td></tr>
 
 </table>
 
 <br><br>
 
-Customer Sign &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Employee Sign
+Customer Sign &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Employee Sign
 
 </body>
 </html>
@@ -73,26 +117,11 @@ Customer Sign &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Employee Sign
 # GRID FUNCTION
 # ---------------------------------------------------
 
-def show_grid(df,key):
+def show_grid(data,key):
 
-    # columns to display (stable)
-    display_cols=[
-    "SR Number",
-    "Name Of Applicant",
-    "Village Or City",
-    "SR Type",
-    "Name Of Scheme",
-    "Demand Load",
-    "Survey Category",
-    "TR MR No",
-    "Consumer No"
-    ]
+    data = clean_dataframe(data)
 
-    display_cols=[c for c in display_cols if c in df.columns]
-
-    grid_df=df[display_cols]
-
-    gb=GridOptionsBuilder.from_dataframe(grid_df)
+    gb = GridOptionsBuilder.from_dataframe(data)
 
     gb.configure_default_column(
         filter=True,
@@ -100,12 +129,16 @@ def show_grid(df,key):
         resizable=True
     )
 
-    gb.configure_pagination(paginationPageSize=50)
+    gb.configure_pagination(
+        paginationAutoPageSize=False,
+        paginationPageSize=50
+    )
 
     AgGrid(
-        grid_df,
+        data,
         gridOptions=gb.build(),
-        height=600,
+        height=650,
+        fit_columns_on_grid_load=True,
         key=key
     )
 
@@ -114,62 +147,65 @@ def show_grid(df,key):
 # FILE UPLOAD
 # ---------------------------------------------------
 
-file=st.file_uploader("Upload PPR Excel / CSV",type=["xlsx","xls","csv"])
+file = st.file_uploader("Upload PPR Excel / CSV", type=["xlsx","xls","csv"])
 
 if file:
 
-    df=load_file(file)
+    df = load_file(file)
 
 # ---------------------------------------------------
-# SIDEBAR FILTER
+# SIDEBAR FILTERS
 # ---------------------------------------------------
 
     st.sidebar.header("Filters")
 
-    scheme=st.sidebar.multiselect(
+    schemes = sorted(df["Name Of Scheme"].unique())
+    selected_scheme = st.sidebar.multiselect(
         "Name Of Scheme",
-        sorted(df["Name Of Scheme"].unique()),
-        default=df["Name Of Scheme"].unique()
+        schemes,
+        default=schemes
     )
 
-    df=df[df["Name Of Scheme"].isin(scheme)]
+    df = df[df["Name Of Scheme"].isin(selected_scheme)]
 
-    sr=st.sidebar.multiselect(
+    sr_types = sorted(df["SR Type"].unique())
+    selected_sr = st.sidebar.multiselect(
         "SR Type",
-        sorted(df["SR Type"].unique()),
-        default=df["SR Type"].unique()
+        sr_types,
+        default=sr_types
     )
 
-    df=df[df["SR Type"].isin(sr)]
+    df = df[df["SR Type"].isin(selected_sr)]
 
-    survey=st.sidebar.multiselect(
+    survey = sorted(df["Survey Category"].unique())
+    selected_survey = st.sidebar.multiselect(
         "Survey Category",
-        sorted(df["Survey Category"].unique()),
-        default=df["Survey Category"].unique()
+        survey,
+        default=survey
     )
 
-    df=df[df["Survey Category"].isin(survey)]
+    df = df[df["Survey Category"].isin(selected_survey)]
 
 # ---------------------------------------------------
 # SEARCH
 # ---------------------------------------------------
 
-    search=st.text_input("🔎 Search SR Number")
+    search = st.text_input("🔎 Search SR Number")
 
     if search:
-        df=df[df["SR Number"].astype(str).str.contains(search)]
+        df = df[df["SR Number"].astype(str).str.contains(search)]
 
 # ---------------------------------------------------
-# OPEN SR ONLY
+# ONLY OPEN SR
 # ---------------------------------------------------
 
-    df=df[df["SR Status"].str.upper()=="OPEN"]
+    df = df[df["SR Status"].str.upper()=="OPEN"]
 
 # ---------------------------------------------------
 # TABS
 # ---------------------------------------------------
 
-    tab1,tab2,tab3,tab4=st.tabs([
+    tab1,tab2,tab3,tab4 = st.tabs([
         "Paid Pending Report",
         "Pending to Issue TMN",
         "Release Pending",
@@ -177,12 +213,12 @@ if file:
     ])
 
 # ---------------------------------------------------
-# TAB 1
+# TAB 1 : PAID PENDING
 # ---------------------------------------------------
 
     with tab1:
 
-        ppr_df=df[df["Date Of WCC"]==""]
+        ppr_df = df[df["Date Of WCC"]==""]
 
         st.metric("Paid Pending",len(ppr_df))
 
@@ -190,12 +226,12 @@ if file:
 
 
 # ---------------------------------------------------
-# TAB 2
+# TAB 2 : TMN PENDING
 # ---------------------------------------------------
 
     with tab2:
 
-        tmn_df=df[
+        tmn_df = df[
             (df["Date Of WCC"]!="") &
             (df["Date Of TMN Issued"]=="")
         ]
@@ -206,23 +242,73 @@ if file:
 
 
 # ---------------------------------------------------
-# TAB 3
+# TAB 3 : RELEASE PENDING
 # ---------------------------------------------------
 
     with tab3:
 
-        release_df=df[
+        release_df = df[
             (df["TR MR No"]!="") &
             (df["Date Of Release Conn"]=="")
-        ]
+        ].copy()
 
         st.metric("Release Pending",len(release_df))
 
-        show_grid(release_df,"release_grid")
+        release_df["release_html"] = release_df.apply(create_release_html,axis=1)
 
+        release_df.insert(0,"Print","")
+
+        renderer = JsCode("""
+
+class Renderer{
+
+init(params){
+
+this.eGui=document.createElement('span');
+this.eGui.innerHTML='🖨';
+this.eGui.style.cursor='pointer';
+
+this.eGui.addEventListener('click',()=>{
+
+const b64=params.data.release_html;
+
+const win=window.open("","_blank");
+
+const bytes=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));
+const html=new TextDecoder("utf-8").decode(bytes);
+
+win.document.write(html);
+win.document.close();
+
+});
+
+}
+
+getGui(){return this.eGui;}
+
+}
+""")
+
+        gb = GridOptionsBuilder.from_dataframe(release_df)
+
+        gb.configure_default_column(filter=True,sortable=True,resizable=True)
+
+        gb.configure_pagination(paginationPageSize=50)
+
+        gb.configure_column("Print",cellRenderer=renderer,width=70)
+
+        gb.configure_column("release_html",hide=True)
+
+        AgGrid(
+            release_df,
+            gridOptions=gb.build(),
+            allow_unsafe_jscode=True,
+            height=650,
+            key="release_grid"
+        )
 
 # ---------------------------------------------------
-# TAB 4
+# TAB 4 : ALL RECORDS
 # ---------------------------------------------------
 
     with tab4:
