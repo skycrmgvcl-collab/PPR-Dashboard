@@ -8,7 +8,7 @@ st.set_page_config(page_title="PPR Monitoring Dashboard", layout="wide")
 st.title("⚡ PPR Monitoring Dashboard")
 
 # -------------------------------------------------------
-# CACHE FILE LOADING (FAST FOR LARGE FILES)
+# CACHE FILE LOADING
 # -------------------------------------------------------
 
 @st.cache_data
@@ -24,7 +24,22 @@ def load_file(file):
     df.replace("NULL","",inplace=True)
     df.fillna("", inplace=True)
 
-    df=df.astype(str)
+    return df
+
+
+# -------------------------------------------------------
+# SANITIZE DATAFRAME (AGGRID SAFE)
+# -------------------------------------------------------
+
+def safe_dataframe(df):
+
+    df = df.copy()
+
+    df = df.fillna("")
+    df = df.replace({None:""})
+
+    for col in df.columns:
+        df[col] = df[col].astype(str)
 
     return df
 
@@ -115,14 +130,44 @@ td {{padding:6px;}}
 
 
 # -------------------------------------------------------
+# GRID FUNCTION
+# -------------------------------------------------------
+
+def show_grid(data,key):
+
+    data=safe_dataframe(data)
+
+    gb=GridOptionsBuilder.from_dataframe(data)
+
+    gb.configure_default_column(
+        filter=True,
+        sortable=True,
+        resizable=True
+    )
+
+    gb.configure_pagination(
+        paginationAutoPageSize=False,
+        paginationPageSize=50
+    )
+
+    AgGrid(
+        data,
+        gridOptions=gb.build(),
+        height=650,
+        fit_columns_on_grid_load=True,
+        key=key
+    )
+
+
+# -------------------------------------------------------
 # FILE UPLOAD
 # -------------------------------------------------------
 
-file = st.file_uploader("Upload PPR Excel / CSV", type=["xlsx","xls","csv"])
+file=st.file_uploader("Upload PPR Excel / CSV",type=["xlsx","xls","csv"])
 
 if file:
 
-    df = load_file(file)
+    df=load_file(file)
 
 # -------------------------------------------------------
 # SIDEBAR FILTERS
@@ -152,41 +197,13 @@ if file:
     search=st.text_input("🔎 Search SR Number")
 
     if search:
-        df=df[df["SR Number"].str.contains(search)]
+        df=df[df["SR Number"].astype(str).str.contains(search)]
 
 # -------------------------------------------------------
 # ONLY OPEN SR
 # -------------------------------------------------------
 
-    df=df[df["SR Status"].str.upper()=="OPEN"]
-
-# -------------------------------------------------------
-# GRID CONFIG FUNCTION
-# -------------------------------------------------------
-
-    def show_grid(data,key):
-
-        gb = GridOptionsBuilder.from_dataframe(data)
-
-        gb.configure_default_column(
-            filter=True,
-            sortable=True,
-            resizable=True
-        )
-
-        gb.configure_pagination(
-            paginationAutoPageSize=False,
-            paginationPageSize=50
-        )
-
-        return AgGrid(
-            data,
-            gridOptions=gb.build(),
-            height=650,
-            fit_columns_on_grid_load=True,
-            key=key
-        )
-
+    df=df[df["SR Status"].astype(str).str.upper()=="OPEN"]
 
 # -------------------------------------------------------
 # TABS
@@ -211,7 +228,6 @@ if file:
 
         show_grid(ppr_df,"ppr_grid")
 
-
 # -------------------------------------------------------
 # TAB 2 : TMN PENDING
 # -------------------------------------------------------
@@ -226,7 +242,6 @@ if file:
         st.metric("TMN Pending",len(tmn_df))
 
         show_grid(tmn_df,"tmn_grid")
-
 
 # -------------------------------------------------------
 # TAB 3 : RELEASE PENDING
@@ -276,17 +291,16 @@ getGui(){return this.eGui;}
 }
 """)
 
+        release_df=safe_dataframe(release_df)
+
         gb=GridOptionsBuilder.from_dataframe(release_df)
 
-        gb.configure_default_column(
-            filter=True,
-            sortable=True,
-            resizable=True
-        )
+        gb.configure_default_column(filter=True,sortable=True,resizable=True)
 
         gb.configure_pagination(paginationPageSize=50)
 
         gb.configure_column("Print",cellRenderer=renderer,width=70)
+
         gb.configure_column("release_html",hide=True)
 
         AgGrid(
@@ -298,7 +312,6 @@ getGui(){return this.eGui;}
             key="release_grid"
         )
 
-
 # -------------------------------------------------------
 # TAB 4 : ALL RECORDS
 # -------------------------------------------------------
@@ -308,7 +321,6 @@ getGui(){return this.eGui;}
         st.metric("Total Records",len(df))
 
         show_grid(df,"all_grid")
-
 
 else:
 
