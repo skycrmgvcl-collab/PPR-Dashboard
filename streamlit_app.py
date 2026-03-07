@@ -20,30 +20,16 @@ def load_file(file):
 
     df.columns = df.columns.str.strip()
 
-    df = df.fillna("")
+    # convert NULL → blank
     df = df.replace("NULL","")
 
-    return df
-
-
-# ---------------------------------------------------
-# CLEAN DATA
-# ---------------------------------------------------
-
-def clean_dataframe(df):
-
-    df = df.copy()
-
     df = df.fillna("")
-    df = df.astype(str)
-
-    df = df.replace(r'[\t\r\n]+',' ',regex=True)
 
     return df
 
 
 # ---------------------------------------------------
-# RELEASE FORM HTML
+# RELEASE FORM
 # ---------------------------------------------------
 
 def create_release_html(row):
@@ -123,7 +109,6 @@ file = st.file_uploader("Upload PPR Excel / CSV", type=["xlsx","xls","csv"])
 if file:
 
     df = load_file(file)
-    df = clean_dataframe(df)
 
 # ---------------------------------------------------
 # SIDEBAR FILTERS
@@ -188,7 +173,7 @@ if file:
     with tab1:
 
         ppr_df = df[
-            (df["SR Status"].astype(str).str.upper()=="OPEN") &
+            (df["SR Status"].str.upper()=="OPEN") &
             (df["Date Of WCC"].astype(str).str.strip()=="")
         ]
 
@@ -203,7 +188,7 @@ if file:
     with tab2:
 
         tmn_df = df[
-            (df["SR Status"].astype(str).str.upper()=="OPEN") &
+            (df["SR Status"].str.upper()=="OPEN") &
             (df["Date Of WCC"].astype(str).str.strip()!="") &
             (df["Date Of TMN Issued"].astype(str).str.strip()=="")
         ]
@@ -219,7 +204,7 @@ if file:
     with tab3:
 
         release_df = df[
-            (df["SR Status"].astype(str).str.upper()=="OPEN") &
+            (df["SR Status"].str.upper()=="OPEN") &
             (df["TR MR No"].astype(str).str.strip()!="") &
             (df["Date Of Release Conn"].astype(str).str.strip()=="")
         ].copy()
