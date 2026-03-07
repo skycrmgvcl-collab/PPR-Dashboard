@@ -18,13 +18,9 @@ def create_release_html(row):
 <html>
 <head>
 <meta charset="UTF-8">
-
 <style>
 
-@page {{
-size:A4;
-margin:8mm;
-}}
+@page {{ size:A4; margin:8mm; }}
 
 body {{
 font-family:'Shruti','Nirmala UI';
@@ -40,7 +36,6 @@ td {{padding:6px;}}
 .line {{border-bottom:1px solid black;width:100%;display:inline-block;}}
 
 </style>
-
 </head>
 
 <body onload="window.print()">
@@ -144,7 +139,7 @@ if file:
         df=df[df["SR Number"].astype(str).str.contains(search)]
 
 # ---------------------------------------------------
-# ONLY OPEN SR STATUS
+# ONLY OPEN SR
 # ---------------------------------------------------
 
     df=df[df["SR Status"].astype(str).str.upper()=="OPEN"]
@@ -172,13 +167,14 @@ if file:
 
         gb=GridOptionsBuilder.from_dataframe(ppr_df)
 
-        gb.configure_default_column(filter=True,sortable=True,resizable=True,flex=1)
+        gb.configure_default_column(filter=True,sortable=True,resizable=True,flex=1,minWidth=140)
 
         AgGrid(
             ppr_df,
             gridOptions=gb.build(),
-            height=600,
-            fit_columns_on_grid_load=True
+            height=650,
+            fit_columns_on_grid_load=True,
+            key="ppr_grid"
         )
 
 # ---------------------------------------------------
@@ -196,13 +192,14 @@ if file:
 
         gb=GridOptionsBuilder.from_dataframe(tmn_df)
 
-        gb.configure_default_column(filter=True,sortable=True,resizable=True,flex=1)
+        gb.configure_default_column(filter=True,sortable=True,resizable=True,flex=1,minWidth=140)
 
         AgGrid(
             tmn_df,
             gridOptions=gb.build(),
-            height=600,
-            fit_columns_on_grid_load=True
+            height=650,
+            fit_columns_on_grid_load=True,
+            key="tmn_grid"
         )
 
 # ---------------------------------------------------
@@ -253,25 +250,11 @@ getGui(){return this.eGui;}
 }
 """)
 
-        display_cols=[
-        "Print",
-        "SR Number",
-        "Name Of Applicant",
-        "Village Or City",
-        "SR Type",
-        "Name Of Scheme",
-        "Demand Load",
-        "Survey Category",
-        "TR MR No",
-        "Consumer No",
-        "SR Status"
-        ]
-
-        grid_df=release_df[display_cols+["release_html"]]
+        grid_df=release_df.copy()
 
         gb=GridOptionsBuilder.from_dataframe(grid_df)
 
-        gb.configure_default_column(filter=True,sortable=True,resizable=True,flex=1)
+        gb.configure_default_column(filter=True,sortable=True,resizable=True,flex=1,minWidth=140)
 
         gb.configure_column("Print",cellRenderer=renderer,width=70)
         gb.configure_column("release_html",hide=True)
@@ -281,7 +264,8 @@ getGui(){return this.eGui;}
             gridOptions=gb.build(),
             allow_unsafe_jscode=True,
             height=650,
-            fit_columns_on_grid_load=True
+            fit_columns_on_grid_load=True,
+            key="release_grid"
         )
 
 # ---------------------------------------------------
@@ -294,13 +278,14 @@ getGui(){return this.eGui;}
 
         gb=GridOptionsBuilder.from_dataframe(df)
 
-        gb.configure_default_column(filter=True,sortable=True,resizable=True,flex=1)
+        gb.configure_default_column(filter=True,sortable=True,resizable=True,flex=1,minWidth=140)
 
         AgGrid(
             df,
             gridOptions=gb.build(),
             height=650,
-            fit_columns_on_grid_load=True
+            fit_columns_on_grid_load=True,
+            key="all_grid"
         )
 
 else:
