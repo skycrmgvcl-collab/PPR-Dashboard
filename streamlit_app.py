@@ -3,21 +3,15 @@ import pandas as pd
 from st_aggrid import AgGrid, GridOptionsBuilder, JsCode
 import base64
 
-st.set_page_config(page_title="PPR Release Dashboard", layout="wide")
+st.set_page_config(page_title="PPR Monitoring Dashboard", layout="wide")
 
-st.title("⚡ PPR Release Monitoring Dashboard")
+st.title("⚡ PPR Monitoring Dashboard")
 
 # ---------------------------------------------------
 # RELEASE FORM HTML
 # ---------------------------------------------------
 
 def create_release_html(row):
-
-    mobile=""
-
-    for c in row.index:
-        if "mob" in c.lower():
-            mobile=row[c]
 
     html=f"""
 <!DOCTYPE html>
@@ -35,77 +29,15 @@ margin:8mm;
 body {{
 font-family:'Shruti','Nirmala UI';
 font-size:14px;
-line-height:1.25;
 }}
 
-.header {{
-text-align:center;
-font-weight:bold;
-font-size:22px;
-}}
+.header {{text-align:center;font-weight:bold;font-size:22px;}}
+.subheader {{text-align:center;font-size:15px;}}
+.title {{text-align:center;font-weight:bold;font-size:18px;margin-bottom:10px;}}
 
-.subheader {{
-text-align:center;
-font-size:15px;
-}}
-
-.title {{
-text-align:center;
-font-weight:bold;
-font-size:18px;
-margin-bottom:10px;
-}}
-
-table {{
-width:100%;
-border-collapse:collapse;
-}}
-
-td {{
-padding:5px;
-vertical-align:top;
-}}
-
-.line {{
-border-bottom:1px solid black;
-display:inline-block;
-width:100%;
-}}
-
-.bold {{
-font-weight:bold;
-font-size:16px;
-}}
-
-.section {{
-font-weight:bold;
-margin-top:6px;
-}}
-
-.box-row {{
-display:flex;
-gap:8px;
-margin-top:8px;
-}}
-
-.box {{
-border:1.5px solid black;
-padding:8px;
-flex:1;
-font-size:13px;
-}}
-
-.box-title {{
-font-weight:bold;
-border-bottom:1px solid black;
-margin-bottom:6px;
-padding-bottom:3px;
-}}
-
-.signature td {{
-text-align:center;
-padding-top:26px;
-}}
+table {{width:100%;border-collapse:collapse;}}
+td {{padding:6px;}}
+.line {{border-bottom:1px solid black;width:100%;display:inline-block;}}
 
 </style>
 
@@ -121,167 +53,47 @@ padding-top:26px;
 <table>
 
 <tr>
-<td width="35%">ગ્રાહકનું નામ</td>
+<td width="35%">SR Number</td>
+<td class="line">{row.get("SR Number","")}</td>
+</tr>
+
+<tr>
+<td>Applicant</td>
 <td class="line">{row.get("Name Of Applicant","")}</td>
 </tr>
 
 <tr>
-<td class="bold">SR No.</td>
-<td class="bold">{row.get("SR Number","")}</td>
+<td>Village</td>
+<td class="line">{row.get("Village Or City","")}</td>
 </tr>
 
 <tr>
-<td>SR Type</td>
-<td class="line">{row.get("SR Type","")}</td>
-</tr>
-
-<tr>
-<td>Name Of Scheme</td>
+<td>Scheme</td>
 <td class="line">{row.get("Name Of Scheme","")}</td>
 </tr>
 
 <tr>
-<td>લોડ</td>
+<td>Load</td>
 <td class="line">{row.get("Demand Load","")} {row.get("Load Uom","")}</td>
 </tr>
 
 <tr>
-<td>સરનામું</td>
-<td class="line">
-{row.get("Address1","")}
-{row.get("Address2","")}
-{row.get("Village Or City","")}
-</td>
-</tr>
-
-<tr>
-<td>Tariff</td>
-<td class="line">{row.get("Tariff","")}</td>
-</tr>
-
-<tr>
-<td>Survey Category</td>
-<td class="line">{row.get("Survey Category","")}</td>
-</tr>
-
-<tr>
-<td>ટેસ્ટ રીપોર્ટ તા.</td>
-<td class="line">{row.get("Date Of TR Recv","")}</td>
-</tr>
-
-<tr>
-<td>રસીદ નં</td>
+<td>TR MR No</td>
 <td class="line">{row.get("TR MR No","")}</td>
 </tr>
 
-<tr>
-<td>મોબાઇલ નંબર</td>
-<td class="line">{mobile}</td>
-</tr>
-
 </table>
 
-<div class="section">૫  માલ સામાન વપરાશની નોંધ</div>
+<br><br>
 
-<div>
-(૧) સર્વિસ વાયર પી.વી.સી. ______ કોર ______ એમ.એમ. ______ મીટર
-</div>
-
-<div>
-(૨) ELCB Make _________ &nbsp;&nbsp;&nbsp; Capacity _________
-</div>
-
-<div>
-(૩) 1-Ph SMC બોક્ષ ______ નંગ &nbsp;&nbsp; | &nbsp;&nbsp; 3-Ph SMC બોક્ષ ______ નંગ
-</div>
-
-<br>
-
-<div class="box">
-
-<div class="box-title">મીટર વિગતો</div>
-
-<table>
-
-<tr><td width="40%">કંપની</td><td>___________</td></tr>
-<tr><td>ટાઈપ</td><td>___________</td></tr>
-<tr><td>કેપેસિટી</td><td>___________</td></tr>
-<tr><td>આંટા</td><td>___________</td></tr>
-<tr><td>મીટર નંબર</td><td>___________</td></tr>
-<tr><td>લેબ નંબર</td><td>___________</td></tr>
-<tr><td>રીડિંગ</td><td>___________</td></tr>
-<tr><td>બોડી સીલ</td><td>___________</td></tr>
-
-</table>
-
-</div>
-
-<div class="box-row">
-
-<div class="box">
-
-<div class="box-title">સીલ ની વિગત</div>
-
-ટર્મિનલ સીલ : __________<br>
-SMC Box સીલ : __________
-
-</div>
-
-<div class="box">
-
-<div class="box-title">મીટર બોર્ડ</div>
-
-મીટર બોર્ડ ______ નંગ
-
-</div>
-
-<div class="box">
-
-<div class="box-title">ઇન્સ્યુલેટર</div>
-
-રીલ ઇન્સ્યુલેટર ______<br>
-એગ ઇન્સ્યુલેટર ______<br>
-GI વાયર 10 ______ મીટર
-
-</div>
-
-<div class="box">
-
-<div class="box-title">અન્ય વિગતો</div>
-
-અર્થિંગ વાયર ______ મીટર<br>
-અર્થિંગ પાઇપ ______ નંગ<br><br>
-
-મીટર પેટી ૫ ફિટ કરતાં વધારે નથી ? ______
-
-</div>
-
-</div>
-
-<br>
-
-<div style="font-size:13px;margin-top:6px;">
-મીટર / મીટર પેટી / સીલિંગ તથા સર્વિસ લાઇન ગ્રાહક તરીકે સાચવવાની સંપૂર્ણ જવાબદારી મારી છે.
-</div>
-
-<br>
-
-<table class="signature">
-
-<tr>
-<td>ગ્રાહકની સહી</td>
-<td>કર્મચારી ની સહી</td>
-<td>જુ.ઇ. સહી</td>
-<td>ના.ઇ. સહી</td>
-</tr>
-
-</table>
+ગ્રાહકની સહી &nbsp;&nbsp;&nbsp;&nbsp; કર્મચારી ની સહી &nbsp;&nbsp;&nbsp;&nbsp; જુ.ઇ. સહી &nbsp;&nbsp;&nbsp;&nbsp; ના.ઇ. સહી
 
 </body>
 </html>
 """
 
     return base64.b64encode(html.encode()).decode()
+
 
 # ---------------------------------------------------
 # FILE UPLOAD
@@ -299,8 +111,28 @@ if file:
     df.columns=df.columns.str.strip()
 
     df.replace("NULL","",inplace=True)
-
     df=df.fillna("")
+
+# ---------------------------------------------------
+# SIDEBAR FILTERS
+# ---------------------------------------------------
+
+    st.sidebar.header("Filters")
+
+    schemes=sorted(df["Name Of Scheme"].unique())
+    selected_scheme=st.sidebar.multiselect("Name Of Scheme",schemes,default=schemes)
+
+    df=df[df["Name Of Scheme"].isin(selected_scheme)]
+
+    sr_types=sorted(df["SR Type"].unique())
+    selected_sr=st.sidebar.multiselect("SR Type",sr_types,default=sr_types)
+
+    df=df[df["SR Type"].isin(selected_sr)]
+
+    survey_cat=sorted(df["Survey Category"].unique())
+    selected_survey=st.sidebar.multiselect("Survey Category",survey_cat,default=survey_cat)
+
+    df=df[df["Survey Category"].isin(selected_survey)]
 
 # ---------------------------------------------------
 # SEARCH
@@ -309,60 +141,88 @@ if file:
     search=st.text_input("🔎 Search SR Number")
 
     if search:
-        df=df[df["SR Number"].astype(str).str.contains(search,case=False)]
+        df=df[df["SR Number"].astype(str).str.contains(search)]
 
 # ---------------------------------------------------
-# FILTERS
+# ONLY OPEN SR STATUS
 # ---------------------------------------------------
 
-    schemes=sorted(df["Name Of Scheme"].unique())
-
-    scheme=st.sidebar.selectbox("Name Of Scheme",["All"]+schemes)
-
-    if scheme!="All":
-        df=df[df["Name Of Scheme"]==scheme]
-
-
-    sr_types=sorted(df["SR Type"].unique())
-
-    sr=st.sidebar.selectbox("SR Type",["All"]+sr_types)
-
-    if sr!="All":
-        df=df[df["SR Type"]==sr]
+    df=df[df["SR Status"].astype(str).str.upper()=="OPEN"]
 
 # ---------------------------------------------------
-# RELEASE PENDING LOGIC
+# TABS
 # ---------------------------------------------------
 
-    release_df=df[
-        (df["TR MR No"].astype(str).str.strip()!="") &
-        ((df["Date Of Release Conn"].astype(str).str.strip()=="") |
-         (df["Date Of Release Conn"].isna())) &
-        (df["SR Status"].astype(str).str.upper()=="OPEN")
-    ].copy()
+    tab1,tab2,tab3,tab4=st.tabs([
+        "Paid Pending Report",
+        "Pending to Issue TMN",
+        "Release Pending",
+        "All Records"
+    ])
 
 # ---------------------------------------------------
-# SUMMARY
+# TAB 1 : PAID PENDING
 # ---------------------------------------------------
 
-    col1,col2=st.columns(2)
+    with tab1:
 
-    col1.metric("Release Pending",len(release_df))
-    col2.metric("TR Received",(df["TR MR No"].astype(str).str.strip()!="").sum())
+        ppr_df=df[df["Date Of WCC"]==""]
+
+        st.metric("Paid Pending",len(ppr_df))
+
+        gb=GridOptionsBuilder.from_dataframe(ppr_df)
+
+        gb.configure_default_column(filter=True,sortable=True,resizable=True,flex=1)
+
+        AgGrid(
+            ppr_df,
+            gridOptions=gb.build(),
+            height=600,
+            fit_columns_on_grid_load=True
+        )
 
 # ---------------------------------------------------
-# GENERATE HTML DATA
+# TAB 2 : TMN PENDING
 # ---------------------------------------------------
 
-    release_df["release_html"]=release_df.apply(create_release_html,axis=1)
+    with tab2:
 
-    release_df.insert(0,"Print","")
+        tmn_df=df[
+            (df["Date Of WCC"]!="") &
+            (df["Date Of TMN Issued"]=="")
+        ]
+
+        st.metric("TMN Pending",len(tmn_df))
+
+        gb=GridOptionsBuilder.from_dataframe(tmn_df)
+
+        gb.configure_default_column(filter=True,sortable=True,resizable=True,flex=1)
+
+        AgGrid(
+            tmn_df,
+            gridOptions=gb.build(),
+            height=600,
+            fit_columns_on_grid_load=True
+        )
 
 # ---------------------------------------------------
-# GRID
+# TAB 3 : RELEASE PENDING
 # ---------------------------------------------------
 
-    renderer=JsCode("""
+    with tab3:
+
+        release_df=df[
+            (df["TR MR No"]!="") &
+            (df["Date Of Release Conn"]=="")
+        ].copy()
+
+        st.metric("Release Pending",len(release_df))
+
+        release_df["release_html"]=release_df.apply(create_release_html,axis=1)
+
+        release_df.insert(0,"Print","")
+
+        renderer=JsCode("""
 
 class Renderer{
 
@@ -393,7 +253,7 @@ getGui(){return this.eGui;}
 }
 """)
 
-    display_cols=[
+        display_cols=[
         "Print",
         "SR Number",
         "Name Of Applicant",
@@ -405,43 +265,43 @@ getGui(){return this.eGui;}
         "TR MR No",
         "Consumer No",
         "SR Status"
-    ]
+        ]
 
-    display_cols=[c for c in display_cols if c in release_df.columns]
+        grid_df=release_df[display_cols+["release_html"]]
 
-    grid_df=release_df[display_cols+["release_html"]]
+        gb=GridOptionsBuilder.from_dataframe(grid_df)
 
-    gb=GridOptionsBuilder.from_dataframe(grid_df)
+        gb.configure_default_column(filter=True,sortable=True,resizable=True,flex=1)
 
-    gb.configure_default_column(
-        filter=True,
-        sortable=True,
-        resizable=True,
-        flex=1,
-        minWidth=120
-    )
+        gb.configure_column("Print",cellRenderer=renderer,width=70)
+        gb.configure_column("release_html",hide=True)
 
-    gb.configure_column("Print",cellRenderer=renderer,width=70)
-
-    gb.configure_column("release_html",hide=True)
-
-    AgGrid(
-        grid_df,
-        gridOptions=gb.build(),
-        allow_unsafe_jscode=True,
-        height=650,
-        fit_columns_on_grid_load=True
-    )
+        AgGrid(
+            grid_df,
+            gridOptions=gb.build(),
+            allow_unsafe_jscode=True,
+            height=650,
+            fit_columns_on_grid_load=True
+        )
 
 # ---------------------------------------------------
-# EXPORT
+# TAB 4 : ALL RECORDS
 # ---------------------------------------------------
 
-    st.download_button(
-        "📥 Export Release Pending List",
-        release_df.to_csv(index=False),
-        file_name="release_pending.csv"
-    )
+    with tab4:
+
+        st.metric("Total Records",len(df))
+
+        gb=GridOptionsBuilder.from_dataframe(df)
+
+        gb.configure_default_column(filter=True,sortable=True,resizable=True,flex=1)
+
+        AgGrid(
+            df,
+            gridOptions=gb.build(),
+            height=650,
+            fit_columns_on_grid_load=True
+        )
 
 else:
 
