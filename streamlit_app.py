@@ -20,8 +20,8 @@ def load_file(file):
 
     df.columns = df.columns.str.strip()
 
-    # convert NULL → blank
-    df = df.replace("NULL","")
+    # treat NULL as blank
+    df = df.replace(r'^\s*NULL\s*$', '', regex=True)
 
     df = df.fillna("")
 
@@ -40,7 +40,6 @@ def create_release_html(row):
 <meta charset="UTF-8">
 
 <style>
-
 body {{
 font-family: Shruti;
 font-size:14px;
@@ -66,7 +65,6 @@ border-collapse:collapse;
 td {{
 padding:6px;
 }}
-
 </style>
 
 </head>
@@ -79,14 +77,12 @@ padding:6px;
 <br>
 
 <table>
-
 <tr><td width="30%">SR Number</td><td>{row.get("SR Number","")}</td></tr>
 <tr><td>Name</td><td>{row.get("Name Of Applicant","")}</td></tr>
 <tr><td>Village</td><td>{row.get("Village Or City","")}</td></tr>
 <tr><td>Scheme</td><td>{row.get("Name Of Scheme","")}</td></tr>
 <tr><td>Load</td><td>{row.get("Demand Load","")} {row.get("Load Uom","")}</td></tr>
 <tr><td>TR MR No</td><td>{row.get("TR MR No","")}</td></tr>
-
 </table>
 
 <br><br>
@@ -174,6 +170,7 @@ if file:
 
         ppr_df = df[
             (df["SR Status"].str.upper()=="OPEN") &
+            (df["Date Of FQ Paid"].astype(str).str.strip()!="") &
             (df["Date Of WCC"].astype(str).str.strip()=="")
         ]
 
