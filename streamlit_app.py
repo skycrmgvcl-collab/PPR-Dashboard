@@ -1,159 +1,160 @@
 import streamlit as st
 import pandas as pd
-import base64
+from st_aggrid import AgGrid, GridOptionsBuilder, JsCode
 
 # Page Configuration
 st.set_page_config(page_title="PPR Monitoring Dashboard", layout="wide")
-st.title("⚡ MGVCL PPR Monitoring Dashboard")
+st.title("⚡ PPR Monitoring Dashboard")
 
-# ---------------------------------------------------
-# CORE LOGIC FUNCTIONS
-# ---------------------------------------------------
+# -----------------------------------------------------------
+# DATA LOADING & CLEANING
+# -----------------------------------------------------------
+file = st.file_uploader("Upload PPR Excel/CSV", type=["xls","xlsx","csv"])
 
-@st.cache_data
-def load_file(file):
-    if file.name.endswith(".csv"):
-        df = pd.read_csv(file, low_memory=False)
+if file:
+    # Read Data
+    if file.name.endswith("csv"):
+        df_raw = pd.read_csv(file, encoding="utf-8-sig")
     else:
-        df = pd.read_excel(file)
+        df_raw = pd.read_excel(file)
 
-    # Clean column names (remove spaces)
-    df.columns = df.columns.str.strip()
-    # Replace 'NULL' strings case-insensitively
-    df = df.replace(to_replace=r'(?i)^\s*NULL\s*$', value='', regex=True)
-    df = df.fillna("")
-    return df
-
-def is_blank(value):
-    val_str = str(value).strip().upper()
-    return val_str == "" or val_str == "NULL" or pd.isna(value)
-
-def is_filled(value):
-    return not is_blank(value)
-
-def is_open_status(series):
-    status = series.astype(str).str.strip().str.upper()
-    return status.eq("OPEN") | status.str.startswith("OPEN ")
-
-# ---------------------------------------------------
-# PRINT FORM GENERATOR (HTML DOWNLOAD METHOD)
-# ---------------------------------------------------
-
-def get_html_download_link(row):
-    """Generates an HTML file that the user can download and print."""
+    # Clean data: Standardize Column Names and NULL values
+    df_raw.columns = df_raw.columns.str.strip()
     
-    sr = str(row.get("SR Number", ""))
-    name = str(row.get("Name Of Applicant", ""))
-    village = str(row.get("Village Or City", ""))
-    scheme = str(row.get("Name Of Scheme", ""))
-    meter = str(row.get("TR MR No", ""))
-    load = f"{row.get('Demand Load','')} {row.get('Load Uom','')}"
+    # Cleaning Logic: Handle 'NULL', 'nan', etc.
+    for col in df_raw.columns:
+        df_raw[col] = df_raw[col].astype(str).str.strip().replace(
+            ['NULL', 'null', 'nan', 'NaN', 'None', 'NAT', 'nan'], ""
+        )
 
-    report_html = f"""
-    <html>
-    <head>
-        <meta charset='UTF-8'>
-        <style>
-            body {{ font-family: 'Arial', sans-serif; padding: 40px; }}
-            .border-box {{ border: 4px solid #000; padding: 30px; }}
-            .header {{ text-align:center; font-weight:bold; font-size:24px; margin-bottom: 5px; }}
-            .title {{ text-align:center; font-size:20px; text-decoration:underline; margin-bottom:40px; }}
-            table {{ width:100%; border-collapse:collapse; }}
-            td {{ padding:15px; border: 1px solid #000; font-size:18px; }}
-            .label {{ background-color: #f2f2f2; font-weight:bold; width: 40%; }}
-            .footer {{ margin-top: 80px; display: flex; justify-content: space-between; font-weight:bold; }}
-        </style>
-    </head>
-    <body onload="window.print()">
-        <div class="border-box">
-            <div class='header'>મધ્ય ગુજરાત વીજ કંપની લી.</div>
-            <div class='title'>નવું કનેક્શન ચાલુ કર્યા અંગેનો રિપોર્ટ</div>
-            <table>
-                <tr><td class='label'>SR Number</td><td>{sr}</td></tr>
-                <tr><td class='label'>ગ્રાહકનું નામ</td><td>{name}</td></tr>
-                <tr><td class='label'>ગામ / શહેર</td><td>{village}</td></tr>
-                <tr><td class='label'>યોજના</td><td>{scheme}</td></tr>
-                <tr><td class='label'>લોડ</td><td>{load}</td></tr>
-                <tr><td class='label'>મીટર નંબર (TR MR No)</td><td>{meter}</td></tr>
-            </table>
-            <div class='footer'>
-                <span>ગ્રાહકની સહી: ______________</span>
-                <span>કર્મચારીની સહી: ______________</span>
-            </div>
-        </div>
-    </body>
-    </html>
-    """
-    return report_html
-
-# ---------------------------------------------------
-# MAIN APP
-# ---------------------------------------------------
-
-uploaded_file = st.file_uploader("📂 Step 1: Upload PPR File", type=["xlsx", "xls", "csv"])
-
-if uploaded_file:
-    df_raw = load_file(uploaded_file)
-    cols = df_raw.columns.tolist()
-
-    # --- SIDEBAR FILTERS (RESTORED) ---
-    st.sidebar.header("📊 Filter Options")
+    # Sidebar Filters
+    st.sidebar.header("🔍 Filters")
+    unique_schemes = sorted([x for x in df_raw["Name Of Scheme"].unique() if x != ""])
+    sel_schemes = st.sidebar.multiselect("Scheme", unique_schemes, default=unique_schemes)
     
-    selected_schemes = []
-    if "Name Of Scheme" in cols:
-        unique_schemes = sorted(df_raw["Name Of Scheme"].unique())
-        selected_schemes = st.sidebar.multiselect("Select Scheme", unique_schemes, default=unique_schemes)
-    
-    selected_types = []
-    if "SR Type" in cols:
-        unique_types = sorted(df_raw["SR Type"].unique())
-        selected_types = st.sidebar.multiselect("Select SR Type", unique_types, default=unique_types)
+    unique_types = sorted([x for x in df_raw["SR Type"].unique() if x != ""])
+    sel_types = st.sidebar.multiselect("SR Type", unique_types, default=unique_types)
 
-    # Apply Filters
-    df = df_raw.copy()
-    if selected_schemes:
-        df = df[df["Name Of Scheme"].isin(selected_schemes)]
-    if selected_types:
-        df = df[df["SR Type"].isin(selected_types)]
+    # Apply Filtering
+    df_filtered = df_raw[
+        (df_raw["Name Of Scheme"].isin(sel_schemes)) & 
+        (df_raw["SR Type"].isin(sel_types))
+    ].copy()
 
-    # --- TABS ---
-    t1, t2, t3, t4 = st.tabs(["Paid Pending", "TMN Pending", "Release Pending (PRINT)", "All Data"])
+    # -----------------------------------------------------------
+    # JAVASCRIPT PRINT RENDERER (Gujarati Support)
+    # -----------------------------------------------------------
+    render_print_button = JsCode("""
+    class PrintRenderer {
+        init(params) {
+            this.eGui = document.createElement('div');
+            this.eGui.innerHTML = `
+                <button style="background-color: #1976d2; color: white; border: none; 
+                border-radius: 4px; cursor: pointer; padding: 4px 12px; font-weight: bold;">
+                🖨️ Print Form
+                </button>
+            `;
+            this.btn = this.eGui.querySelector('button');
+            this.btn.addEventListener('click', () => {
+                const r = params.data;
+                const htmlContent = `
+                    <html>
+                    <head>
+                        <meta charset="UTF-8">
+                        <style>
+                            @page { size: A4; margin: 10mm; }
+                            body { font-family: 'Arial', sans-serif; padding: 20px; }
+                            .header { text-align: center; font-size: 22px; font-weight: bold; }
+                            .title { text-align: center; font-size: 18px; font-weight: bold; text-decoration: underline; margin: 20px 0; }
+                            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                            td { border: 1px solid black; padding: 12px; font-size: 16px; }
+                            .label { background-color: #f2f2f2; font-weight: bold; width: 35%; }
+                            .footer { margin-top: 60px; display: flex; justify-content: space-between; font-weight: bold; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="header">મધ્ય ગુજરાત વીજ કંપની લી.</div>
+                        <div class="title">નવું કનેક્શન ચાલુ કર્યા અંગેનો રિપોર્ટ</div>
+                        <table>
+                            <tr><td class="label">SR Number</td><td>${r['SR Number'] || ''}</td></tr>
+                            <tr><td class="label">ગ્રાહકનું નામ</td><td>${r['Name Of Applicant'] || ''}</td></tr>
+                            <tr><td class="label">ગામ / શહેર</td><td>${r['Village Or City'] || ''}</td></tr>
+                            <tr><td class="label">યોજના</td><td>${r['Name Of Scheme'] || ''}</td></tr>
+                            <tr><td class="label">લોડ</td><td>${r['Demand Load'] || ''} ${r['Load Uom'] || ''}</td></tr>
+                            <tr><td class="label">મીટર નંબર (TR MR No)</td><td>${r['TR MR No'] || ''}</td></tr>
+                        </table>
+                        <div class="footer">
+                            <span>ગ્રાહકની સહી: ______________</span>
+                            <span>કર્મચારીની સહી: ______________</span>
+                        </div>
+                        <script>window.print();</script>
+                    </body>
+                    </html>
+                `;
+                var w = window.open('', '_blank');
+                w.document.write(htmlContent);
+                w.document.close();
+            });
+        }
+        getGui() { return this.eGui; }
+    }
+    """)
+
+    # -----------------------------------------------------------
+    # GRID DISPLAY FUNCTION
+    # -----------------------------------------------------------
+    def show_grid(data, key, show_print=False):
+        gb = GridOptionsBuilder.from_dataframe(data)
+        gb.configure_default_column(resizable=True, filter=True, sortable=True)
+        
+        if show_print:
+            # Adding the Print button column to the left
+            gb.configure_column("Print", headerName="Action", cellRenderer=render_print_button, 
+                                width=120, pinned='left')
+        
+        gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=15)
+        AgGrid(data, gridOptions=gb.build(), height=500, theme="streamlit", 
+               allow_unsafe_jscode=True, key=key)
+
+    # -----------------------------------------------------------
+    # TABS LOGIC
+    # -----------------------------------------------------------
+    t1, t2, t3, t4 = st.tabs(["Paid Pending", "TMN Pending", "Release Pending", "All Records"])
+
+    with t1:
+        # LOGIC: Paid Date exists but WCC is blank
+        df_paid = df_filtered[
+            (df_filtered["SR Status"].str.upper() == "OPEN") &
+            (df_filtered["Date Of FQ Paid"] != "") &
+            (df_filtered["Date Of WCC"] == "")
+        ]
+        st.write(f"Paid Pending: **{len(df_paid)}**")
+        show_grid(df_paid, "grid1")
+
+    with t2:
+        # LOGIC: WCC Date exists but TMN Issued is blank
+        df_tmn = df_filtered[
+            (df_filtered["SR Status"].str.upper() == "OPEN") &
+            (df_filtered["Date Of WCC"] != "") &
+            (df_filtered["Date Of TMN Issued"] == "")
+        ]
+        st.write(f"Pending TMN: **{len(df_tmn)}**")
+        show_grid(df_tmn, "grid2")
 
     with t3:
-        # Check required columns for Release Pending
-        req = ["SR Status", "TR MR No", "Date Of Release Conn"]
-        missing = [c for c in req if c not in cols]
-
-        if missing:
-            st.error(f"Required columns missing: {missing}")
-        else:
-            res3 = df[
-                is_open_status(df["SR Status"]) & 
-                df["TR MR No"].apply(is_filled) & 
-                df["Date Of Release Conn"].apply(is_blank)
-            ].copy()
-
-            st.success(f"Found {len(res3)} records ready for printing.")
-            
-            for idx, row in res3.iterrows():
-                col_txt, col_btn = st.columns([3, 1])
-                col_txt.write(f"**SR:** {row['SR Number']} | **Name:** {row['Name Of Applicant']}")
-                
-                # HTML Generation
-                html_content = get_html_download_link(row)
-                
-                # Download Button (No Pop-ups needed!)
-                col_btn.download_button(
-                    label="📥 Download Print Form",
-                    data=html_content,
-                    file_name=f"Report_{row['SR Number']}.html",
-                    mime="text/html",
-                    key=f"btn_{idx}"
-                )
-                st.divider()
+        # LOGIC: TR MR No entered but Release Date is blank
+        df_release = df_filtered[
+            (df_filtered["SR Status"].str.upper() == "OPEN") &
+            (df_filtered["TR MR No"] != "") &
+            (df_filtered["Date Of Release Conn"] == "")
+        ]
+        st.write(f"Ready for Release: **{len(df_release)}**")
+        # Print button enabled here
+        show_grid(df_release, "grid3", show_print=True)
 
     with t4:
-        st.dataframe(df, use_container_width=True)
+        st.write(f"Total Filtered Records: **{len(df_filtered)}**")
+        show_grid(df_filtered, "grid4")
 
 else:
-    st.info("👋 Welcome! Please upload an Excel/CSV file to enable the dashboard and filters.")
+    st.info("Please upload your file (Excel or CSV) to begin tracking.")
