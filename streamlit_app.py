@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components  # Added this vital import
 import pandas as pd
 import base64
 
@@ -35,80 +36,90 @@ def is_open_status(series):
     return status.eq("OPEN") | status.str.startswith("OPEN ")
 
 # ---------------------------------------------------
-# STABLE PRINT GENERATOR (JAVASCRIPT BLOB METHOD)
+# STABLE PRINT GENERATOR
 # ---------------------------------------------------
 
-def get_print_script(row):
-    """Creates a robust JavaScript trigger to prevent blank popups."""
+def get_print_button_html(row):
+    """Creates a JavaScript-powered button to generate the report."""
     
-    # The actual HTML content of your form
-    report_html = f"""
+    # Clean up the data to avoid JS errors
+    sr = str(row.get("SR Number", ""))
+    name = str(row.get("Name Of Applicant", "")).replace("'", "\\'")
+    village = str(row.get("Village Or City", "")).replace("'", "\\'")
+    scheme = str(row.get("Name Of Scheme", "")).replace("'", "\\'")
+    meter = str(row.get("TR MR No", "")).replace("'", "\\'")
+    load = f"{row.get('Demand Load','')} {row.get('Load Uom','')}"
+
+    report_content = f"""
     <html>
     <head>
         <meta charset='UTF-8'>
         <style>
-            body {{ font-family: Arial, sans-serif; padding: 30px; border: 2px solid #000; }}
-            .header {{ text-align:center; font-weight:bold; font-size:24px; }}
-            .title {{ text-align:center; font-size:20px; text-decoration:underline; margin-bottom:30px; }}
-            table {{ width:100%; border-collapse:collapse; }}
-            td {{ padding:12px; border: 1px solid #000; font-size:16px; }}
+            body {{ font-family: Arial, sans-serif; padding: 40px; border: 5px solid #000; }}
+            .header {{ text-align:center; font-weight:bold; font-size:26px; }}
+            .title {{ text-align:center; font-size:22px; text-decoration:underline; margin-bottom:40px; }}
+            table {{ width:100%; border-collapse:collapse; margin-bottom: 50px; }}
+            td {{ padding:15px; border: 1px solid #000; font-size:18px; }}
             .label {{ background-color: #f2f2f2; font-weight:bold; width: 40%; }}
-            .footer {{ margin-top: 60px; display: flex; justify-content: space-between; font-weight:bold; }}
+            .footer {{ margin-top: 100px; display: flex; justify-content: space-between; font-weight:bold; }}
         </style>
     </head>
     <body>
         <div class='header'>મધ્ય ગુજરાત વીજ કંપની લી.</div>
         <div class='title'>નવું કનેક્શન ચાલુ કર્યા અંગેનો રિપોર્ટ</div>
         <table>
-            <tr><td class='label'>SR Number</td><td>{row.get("SR Number","")}</td></tr>
-            <tr><td class='label'>Name</td><td>{row.get("Name Of Applicant","")}</td></tr>
-            <tr><td class='label'>Village</td><td>{row.get("Village Or City","")}</td></tr>
-            <tr><td class='label'>Scheme</td><td>{row.get("Name Of Scheme","")}</td></tr>
-            <tr><td class='label'>Meter No (TR MR)</td><td>{row.get("TR MR No","")}</td></tr>
+            <tr><td class='label'>SR Number</td><td>{sr}</td></tr>
+            <tr><td class='label'>ગ્રાહકનું નામ</td><td>{name}</td></tr>
+            <tr><td class='label'>ગામ / શહેર</td><td>{village}</td></tr>
+            <tr><td class='label'>યોજના</td><td>{scheme}</td></tr>
+            <tr><td class='label'>લોડ</td><td>{load}</td></tr>
+            <tr><td class='label'>મીટર નંબર (TR MR)</td><td>{meter}</td></tr>
         </table>
         <div class='footer'>
-            <span>Customer Sign</span>
-            <span>Employee Sign</span>
+            <span>ગ્રાહકની સહી</span>
+            <span>કર્મચારીની સહી</span>
         </div>
-        <script>window.print();</script>
+        <script>window.onload = function() {{ window.print(); }};</script>
     </body>
     </html>
-    """.replace("\n", "").replace("'", "\\'")
+    """.replace("\n", " ")
 
-    # This JS creates a 'Blob' which browsers handle much better than raw data strings
-    js_code = f"""
+    # The actual button with embedded JS logic
+    raw_html = f"""
+    <button id="printBtn" style="
+        background-color: #28a745; 
+        color: white; 
+        padding: 10px 20px; 
+        border: none; 
+        border-radius: 5px; 
+        font-weight: bold; 
+        cursor: pointer;
+        width: 100%;
+    ">🖨 GENERATE PDF</button>
+
     <script>
-    function printReport_{row['SR Number']}() {{
-        var htmlContent = '{report_html}';
-        var blob = new Blob([htmlContent], {{type: 'text/html'}});
-        var url = URL.createObjectURL(blob);
-        var win = window.open(url, '_blank');
-        if(!win) {{
-            alert('Please allow pop-ups for this website to print the form.');
-        }}
-    }}
+    document.getElementById('printBtn').onclick = function() {{
+        var win = window.open('', '_blank');
+        win.document.write('{report_content}');
+        win.document.close();
+    }};
     </script>
-    <button onclick="printReport_{row['SR Number']}()" 
-    style="background-color: #28a745; color: white; padding: 10px 20px; 
-    border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
-    🖨 GENERATE PDF / PRINT
-    </button>
     """
-    return js_code
+    return raw_html
 
 # ---------------------------------------------------
-# MAIN APP
+# MAIN APP INTERFACE
 # ---------------------------------------------------
 
-file = st.file_uploader("Upload File", type=["xlsx", "xls", "csv"])
+file = st.file_uploader("Upload PPR File", type=["xlsx", "xls", "csv"])
 
 if file:
     df = load_file(file)
     
-    tab1, tab2, tab3, tab4 = st.tabs(["Paid Pending", "TMN Pending", "Release Pending", "All"])
+    tab1, tab2, tab3, tab4 = st.tabs(["Paid Pending", "TMN Pending", "Release Pending", "All Records"])
 
     with tab3:
-        # Filter for records ready to print
+        # Filter logic for Release Pending
         res3 = df[
             is_open_status(df["SR Status"]) & 
             df["TR MR No"].apply(is_filled) & 
@@ -116,20 +127,21 @@ if file:
         ].copy()
 
         if not res3.empty:
-            st.success(f"Found {len(res3)} records. Click the button to generate the PDF form.")
+            st.info("💡 **Tip:** Click the green button. When the new tab opens, select **'Save as PDF'** in your printer settings.")
+            
             for idx, row in res3.iterrows():
-                with st.container():
-                    col_txt, col_btn = st.columns([3, 1])
-                    col_txt.write(f"**SR:** {row['SR Number']} | **Name:** {row['Name Of Applicant']}")
-                    
-                    # Injecting the JS Button
-                    col_btn.components.v1.html(get_print_script(row), height=60)
-                    st.divider()
+                col_info, col_btn = st.columns([3, 1])
+                col_info.write(f"**SR:** {row['SR Number']} | **Name:** {row['Name Of Applicant']}")
+                
+                # Using the imported components to render the button
+                with col_btn:
+                    components.html(get_print_button_html(row), height=60)
+                st.divider()
         else:
-            st.warning("No records found that are ready for release.")
+            st.warning("No records found ready for Release. Check your data for 'OPEN' status and 'NULL' dates.")
 
     with tab4:
-        st.dataframe(df)
+        st.dataframe(df, use_container_width=True)
 
 else:
-    st.info("Upload an Excel file to see the 'Release Pending' print buttons.")
+    st.info("Please upload a file to enable the dashboard.")
