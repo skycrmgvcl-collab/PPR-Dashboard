@@ -7,71 +7,75 @@ st.set_page_config(page_title="PPR Monitoring Dashboard", layout="wide")
 st.title("⚡ PPR Monitoring Dashboard")
 
 # ---------------------------------------------------
-# HELPER FUNCTIONS
+# CORE LOGIC FUNCTIONS
 # ---------------------------------------------------
 
 @st.cache_data
 def load_file(file):
-    """Loads CSV or Excel files and cleans up column names/NULL values."""
+    """Loads file and performs initial cleaning of 'NULL' strings."""
     if file.name.endswith(".csv"):
         df = pd.read_csv(file, low_memory=False)
     else:
         df = pd.read_excel(file)
 
     df.columns = df.columns.str.strip()
-    # Convert 'NULL' string to empty string
-    df = df.replace(r'^\s*NULL\s*$', '', regex=True)
-    # Fill actual NaN values with empty string
+    
+    # Convert any variation of 'NULL' string to actual empty string for consistency
+    df = df.replace(r'^\s*NULL\s*$', '', regex=True, flags=2) # flag 2 = IgnoreCase
     df = df.fillna("")
     return df
 
 def is_blank(value):
-    """Checks if a cell is empty or contains the word NULL."""
-    text = str(value).strip()
-    return text == "" or text.upper() == "NULL"
+    """Returns True if the value is empty, NaN, or the string 'NULL'."""
+    val_str = str(value).strip().upper()
+    return val_str == "" or val_str == "NULL" or pd.isna(value)
+
+def is_filled(value):
+    """Returns True if the cell actually contains data (not blank/NULL)."""
+    return not is_blank(value)
 
 def normalized_text(series):
-    """Standardizes text for comparison (removes spaces and converts to UPPER)."""
+    """Standardizes text for comparison."""
     return series.astype(str).str.strip().str.upper()
 
 def is_open_status(series):
-    """Checks if the SR Status starts with 'OPEN'."""
+    """Logic to identify 'OPEN' records regardless of extra spaces."""
     status = normalized_text(series)
     return status.eq("OPEN") | status.str.startswith("OPEN ")
 
 # ---------------------------------------------------
-# RELEASE FORM HTML GENERATOR
+# PRINT FORM GENERATOR
 # ---------------------------------------------------
 
 def create_release_html(row):
-    """Generates a Gujarati print-ready HTML form."""
+    """Generates the Gujarati Report HTML."""
     html = f"""
     <html>
     <head>
     <meta charset="UTF-8">
     <style>
-        body {{ font-family: 'Shruti', sans-serif; font-size:14px; padding: 20px; }}
-        .header {{ text-align:center; font-weight:bold; font-size:22px; }}
-        .title {{ text-align:center; font-weight:bold; font-size:18px; }}
-        table {{ width:100%; border-collapse:collapse; margin-top: 20px; }}
-        td {{ padding:8px; border-bottom: 1px solid #eee; }}
-        .sign-area {{ margin-top: 50px; display: flex; justify-content: space-between; }}
+        body {{ font-family: 'Shruti', 'Arial'; font-size:14px; line-height: 1.6; }}
+        .header {{ text-align:center; font-weight:bold; font-size:22px; margin-bottom:5px; }}
+        .title {{ text-align:center; font-weight:bold; font-size:18px; margin-bottom:20px; }}
+        table {{ width:100%; border-collapse:collapse; }}
+        td {{ padding:8px; border-bottom: 1px solid #ddd; }}
+        .footer {{ margin-top: 60px; display: flex; justify-content: space-between; font-weight: bold; }}
     </style>
     </head>
     <body onload="window.print()">
         <div class="header">મધ્ય ગુજરાત વીજ કંપની લી.</div>
         <div class="title">નવું કનેક્શન ચાલુ કર્યા અંગેનો રિપોર્ટ</div>
         <table>
-            <tr><td width="30%"><b>SR Number</b></td><td>{row.get("SR Number","")}</td></tr>
-            <tr><td><b>Name</b></td><td>{row.get("Name Of Applicant","")}</td></tr>
-            <tr><td><b>Village</b></td><td>{row.get("Village Or City","")}</td></tr>
-            <tr><td><b>Scheme</b></td><td>{row.get("Name Of Scheme","")}</td></tr>
-            <tr><td><b>Load</b></td><td>{row.get("Demand Load","")} {row.get("Load Uom","")}</td></tr>
-            <tr><td><b>TR MR No</b></td><td>{row.get("TR MR No","")}</td></tr>
+            <tr><td width="35%">SR Number</td><td>{row.get("SR Number","")}</td></tr>
+            <tr><td>Name Of Applicant</td><td>{row.get("Name Of Applicant","")}</td></tr>
+            <tr><td>Village Or City</td><td>{row.get("Village Or City","")}</td></tr>
+            <tr><td>Name Of Scheme</td><td>{row.get("Name Of Scheme","")}</td></tr>
+            <tr><td>Demand Load</td><td>{row.get("Demand Load","")} {row.get("Load Uom","")}</td></tr>
+            <tr><td>TR MR No</td><td>{row.get("TR MR No","")}</td></tr>
         </table>
-        <div class="sign-area">
-            <p>Customer Sign: ________________</p>
-            <p>Employee Sign: ________________</p>
+        <div class="footer">
+            <span>Customer Sign: ________________</span>
+            <span>Employee Sign: ________________</span>
         </div>
     </body>
     </html>
@@ -79,7 +83,7 @@ def create_release_html(row):
     return base64.b64encode(html.encode('utf-8')).decode()
 
 # ---------------------------------------------------
-# MAIN APPLICATION LOGIC
+# APP INTERFACE
 # ---------------------------------------------------
 
 file = st.file_uploader("Upload PPR Excel / CSV", type=["xlsx", "xls", "csv"])
@@ -88,95 +92,87 @@ if file:
     df = load_file(file)
 
     # --- SIDEBAR FILTERS ---
-    st.sidebar.header("Filters")
+    st.sidebar.header("Navigation & Filters")
     
-    # Scheme Filter
-    schemes = sorted(df["Name Of Scheme"].unique()) if "Name Of Scheme" in df.columns else []
-    scheme_sel = st.sidebar.multiselect("Name Of Scheme", schemes, default=schemes)
-    if scheme_sel:
-        df = df[df["Name Of Scheme"].isin(scheme_sel)]
+    # Dynamic list generation for filters
+    cols = df.columns
+    
+    scheme_list = sorted(df["Name Of Scheme"].unique()) if "Name Of Scheme" in cols else []
+    scheme_sel = st.sidebar.multiselect("Filter Scheme", scheme_list, default=scheme_list)
+    
+    sr_type_list = sorted(df["SR Type"].unique()) if "SR Type" in cols else []
+    sr_sel = st.sidebar.multiselect("Filter SR Type", sr_type_list, default=sr_type_list)
 
-    # SR Type Filter
-    sr_types = sorted(df["SR Type"].unique()) if "SR Type" in df.columns else []
-    sr_sel = st.sidebar.multiselect("SR Type", sr_types, default=sr_types)
-    if sr_sel:
-        df = df[df["SR Type"].isin(sr_sel)]
-
-    # Survey Category Filter
-    survey = sorted(df["Survey Category"].unique()) if "Survey Category" in df.columns else []
-    survey_sel = st.sidebar.multiselect("Survey Category", survey, default=survey)
-    if survey_sel:
-        df = df[df["Survey Category"].isin(survey_sel)]
+    # Apply Filters
+    filtered_df = df[
+        (df["Name Of Scheme"].isin(scheme_sel)) & 
+        (df["SR Type"].isin(sr_sel))
+    ]
 
     # --- SEARCH ---
-    search = st.text_input("🔎 Search SR Number")
+    search = st.text_input("🔎 Quick Search (SR Number)")
     if search:
-        df = df[df["SR Number"].astype(str).str.contains(search)]
+        filtered_df = filtered_df[filtered_df["SR Number"].astype(str).str.contains(search)]
 
-    # --- TABS ---
+    # --- TABS LOGIC ---
     tab1, tab2, tab3, tab4 = st.tabs([
-        "Paid Pending", 
-        "Pending to Issue TMN", 
-        "Release Pending", 
-        "All Records"
+        "Paid Pending", "TMN Pending", "Release Pending", "View All"
     ])
 
-    # TAB 1: PAID PENDING (Paid but WCC not done)
+    # TAB 1: PAID PENDING
+    # Logic: Status is OPEN + Paid Date exists + WCC Date is NULL/Blank
     with tab1:
-        ppr_df = df[
-            is_open_status(df["SR Status"]) & 
-            (~df["Date Of FQ Paid"].apply(is_blank)) & 
-            (df["Date Of WCC"].apply(is_blank))
+        res1 = filtered_df[
+            is_open_status(filtered_df["SR Status"]) & 
+            filtered_df["Date Of FQ Paid"].apply(is_filled) & 
+            filtered_df["Date Of WCC"].apply(is_blank)
         ]
-        st.metric("Paid Pending", len(ppr_df))
-        st.dataframe(ppr_df, use_container_width=True)
+        st.metric("Records Found", len(res1))
+        st.dataframe(res1, use_container_width=True)
 
-    # TAB 2: TMN PENDING (WCC done but TMN not issued)
+    # TAB 2: TMN PENDING
+    # Logic: Status is OPEN + WCC Date exists + TMN Date is NULL/Blank
     with tab2:
-        tmn_df = df[
-            is_open_status(df["SR Status"]) & 
-            (~df["Date Of WCC"].apply(is_blank)) & 
-            (df["Date Of TMN Issued"].apply(is_blank))
+        res2 = filtered_df[
+            is_open_status(filtered_df["SR Status"]) & 
+            filtered_df["Date Of WCC"].apply(is_filled) & 
+            filtered_df["Date Of TMN Issued"].apply(is_blank)
         ]
-        st.metric("Pending to Issue TMN", len(tmn_df))
-        st.dataframe(tmn_df, use_container_width=True)
+        st.metric("Records Found", len(res2))
+        st.dataframe(res2, use_container_width=True)
 
-    # TAB 3: RELEASE PENDING (TR MR entered but Connection not released)
+    # TAB 3: RELEASE PENDING
+    # Logic: Status is OPEN + TR MR No exists + Release Date is NULL/Blank
     with tab3:
-        release_df = df[
-            is_open_status(df["SR Status"]) & 
-            (~df["TR MR No"].apply(is_blank)) & 
-            (df["Date Of Release Conn"].apply(is_blank))
+        res3 = filtered_df[
+            is_open_status(filtered_df["SR Status"]) & 
+            filtered_df["TR MR No"].apply(is_filled) & 
+            filtered_df["Date Of Release Conn"].apply(is_blank)
         ].copy()
         
-        st.metric("Release Pending", len(release_df))
+        st.metric("Records Found", len(res3))
         
-        # Display individual rows with Print buttons
-        for i, row in release_df.iterrows():
-            col1, col2, col3 = st.columns([3, 3, 1])
-            col1.write(f"**SR:** {row['SR Number']}")
-            col2.write(row['Name Of Applicant'])
+        # Display Print buttons for each row
+        if not res3.empty:
+            for idx, row in res3.head(20).iterrows(): # Showing first 20 for performance
+                c1, c2, c3 = st.columns([2, 4, 1])
+                c1.info(f"SR: {row['SR Number']}")
+                c2.write(row['Name Of Applicant'])
+                html_b64 = create_release_html(row)
+                btn_html = f'<a href="data:text/html;base64,{html_b64}" target="_blank" style="background-color:#4CAF50; color:white; padding:8px 12px; text-decoration:none; border-radius:4px;">🖨 Print</a>'
+                c3.markdown(btn_html, unsafe_allow_html=True)
             
-            # Print Link
-            html_code = create_release_html(row)
-            link = f'<a href="data:text/html;base64,{html_code}" target="_blank" style="text-decoration:none;">🖨 Print</a>'
-            col3.markdown(link, unsafe_allow_html=True)
-        
-        st.divider()
-        st.dataframe(release_df, use_container_width=True)
+            st.divider()
+        st.dataframe(res3, use_container_width=True)
 
     # TAB 4: ALL RECORDS
     with tab4:
-        st.metric("Total Records", len(df))
-        st.dataframe(df, use_container_width=True)
+        st.metric("Total Filtered Records", len(filtered_df))
+        st.dataframe(filtered_df, use_container_width=True)
 
-    # --- EXPORT ---
-    st.download_button(
-        label="📥 Export Filtered Data to CSV",
-        data=df.to_csv(index=False).encode('utf-8'),
-        file_name="ppr_filtered_data.csv",
-        mime="text/csv"
-    )
+    # --- DOWNLOAD ---
+    csv_data = filtered_df.to_csv(index=False).encode('utf-8')
+    st.download_button("📥 Download Filtered Data", data=csv_data, file_name="ppr_data.csv", mime="text/csv")
 
 else:
-    st.info("Please upload a PPR file (Excel or CSV) to begin monitoring.")
+    st.warning("👈 Please upload a file (Excel or CSV) to begin.")
