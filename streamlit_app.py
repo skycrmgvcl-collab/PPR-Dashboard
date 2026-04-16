@@ -76,7 +76,7 @@ if file:
                             <tr><td class="label">SR Number</td><td class="data highlight">${{v('{col_sr}')}}</td></tr>
                             <tr><td class="label">SR Type / Category</td><td class="data">${{v('{col_type}')}} / ${{v('Consumer Category')}}</td></tr>
                             <tr><td class="label">Date Of TR Recv</td><td class="data">${{v('{col_tr_recv}')}}</td></tr>
-                            <tr><td class="label">Application Date</td><td class="data">${{v('Date Of Application')}}</td></tr>
+                            <tr><td class="label">Application Date</td><td class="data">${{v('RC Date')}}</td></tr>
                             <tr><td class="label">યોજના (Scheme)</td><td class="data">${{v('Name Of Scheme')}}</td></tr>
                             
                             <tr class="section-head"><td colspan="2">ગ્રાહક અને સ્થળ વિગત (Consumer Info)</td></tr>
