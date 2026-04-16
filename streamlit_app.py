@@ -26,7 +26,7 @@ if file:
         # 2. Define Required Columns
         col_sr = "SR Number"
         col_type = "SR Type"
-        col_tr_recv = "Date of TR Recv"
+        col_tr_recv = "Date Of TR Recv"
         col_rel_date = "Date Of Release Conn"
 
         # Check if columns exist
@@ -78,7 +78,7 @@ if file:
                         <table>
                             <tr><td class="label">SR Number</td><td class="val highlight">${{v('{col_sr}')}}</td></tr>
                             <tr><td class="label">SR Type</td><td class="val">${{v('{col_type}')}}</td></tr>
-                            <tr><td class="label">Date of TR Recv</td><td class="val">${{v('{col_tr_recv}')}}</td></tr>
+                            <tr><td class="label">Date Of TR Recv</td><td class="val">${{v('{col_tr_recv}')}}</td></tr>
                             <tr><td class="label">અરજદારનું નામ</td><td class="val">${{v('Name Of Applicant')}}</td></tr>
                             <tr><td class="label">ગામ / શહેર</td><td class="val">${{v('Village Or City')}}</td></tr>
                             <tr><td class="label">યોજના (Scheme)</td><td class="val">${{v('Name Of Scheme')}}</td></tr>
