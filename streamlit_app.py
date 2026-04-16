@@ -5,7 +5,7 @@ import base64
 st.set_page_config(page_title="MGVCL PPR Dashboard", layout="wide")
 
 # -----------------------------------------------------------
-# 1. CSS FOR PRINTING (The Performa Design)
+# 1. PERFORMA GENERATOR
 # -----------------------------------------------------------
 def get_print_html(row, col_tr, col_scheme):
     """Generates the HTML Performa for a specific row"""
@@ -48,19 +48,20 @@ def get_print_html(row, col_tr, col_scheme):
     """
 
 # -----------------------------------------------------------
-# 2. FILE LOADING & CLEANING
+# 2. FILE LOADING & SIDEBAR
 # -----------------------------------------------------------
 st.title("⚡ MGVCL: Meter Installation Dashboard")
 file = st.file_uploader("Upload PPR File", type=["xls", "xlsx", "csv"])
 
 if file:
     try:
+        # Load File
         if file.name.endswith(('xlsx', 'xls')):
             df_raw = pd.read_excel(file)
         else:
             df_raw = pd.read_csv(file, encoding='latin1', on_bad_lines='skip')
 
-        # Clean Columns
+        # Clean Columns and Data
         df_raw.columns = [str(col).strip() for col in df_raw.columns]
         df = df_raw.astype(str)
         for col in df.columns:
@@ -70,17 +71,15 @@ if file:
         col_date = "Date Of Release Conn"
         col_scheme = "Name Of Scheme"
 
-        # -----------------------------------------------------------
-        # 3. SIDEBAR FILTERS
-        # -----------------------------------------------------------
-        st.sidebar.header("🔍 Filter Options")
+        # Sidebar Filters
+        st.sidebar.header("🔍 Filters")
         if col_scheme in df.columns:
             schemes = sorted(df[col_scheme].unique())
             selected_schemes = st.sidebar.multiselect("Select Scheme", schemes, default=schemes)
             df = df[df[col_scheme].isin(selected_schemes)]
 
         # -----------------------------------------------------------
-        # 4. FILTERING LOGIC
+        # 3. FILTERING LOGIC
         # -----------------------------------------------------------
         mask = (df[col_tr].str.upper() != "NULL") & (df[col_date].str.upper() == "NULL")
         df_pending = df[mask].copy().reset_index(drop=True)
@@ -88,60 +87,62 @@ if file:
         t1, t2 = st.tabs(["🚀 Release Pending List", "📁 All Data"])
 
         with t1:
-            st.subheader(f"Total Pending for Installation: {len(df_pending)}")
+            st.subheader(f"Total Pending: {len(df_pending)}")
             
             if not df_pending.empty:
-                # We create a "Print" link for each row
-                # This doesn't use JavaScript - it uses simple URL encoding
-                def make_print_link(row_idx):
-                    return f"Print_Form_{row_idx}"
+                st.info("💡 **How to Print:** Click the radio button next to a row to select it, then click the red button that appears below.")
+                
+                # Using st.dataframe for the table
+                # We add a temporary column for selection identification
+                df_display = df_pending.copy()
+                df_display.insert(0, "Select", "⭕")
 
-                df_pending["Action"] = df_pending.index.map(make_print_link)
+                # Show the table
+                st.dataframe(df_display, use_container_width=True)
 
-                # DISPLAY THE TABLE
-                # Using Streamlit's native data_editor which is bug-free
-                event = st.dataframe(
-                    df_pending,
-                    column_config={
-                        "Action": st.column_config.ButtonColumn(
-                            "Print Performa",
-                            help="Click to generate print preview",
-                            key="print_btn"
-                        ),
-                    },
-                    hide_index=True,
-                    use_container_width=True,
-                    on_select="rerun",
-                    selection_mode="single_row"
-                )
+                # Selection Box
+                # Since we can't put a button in a row in old Streamlit versions easily,
+                # we use a Selectbox tied to the TR MR No
+                selection_list = df_pending[col_tr].tolist()
+                selected_tr = st.selectbox("👉 Choose a TR MR Number to Print", selection_list)
 
-                # -----------------------------------------------------------
-                # 5. THE PRINT TRIGGER
-                # -----------------------------------------------------------
-                # When a user clicks a row, we show the print button for that specific record
-                selection = event.selection.rows
-                if selection:
-                    idx = selection[0]
-                    selected_row = df_pending.iloc[idx]
+                if selected_tr:
+                    selected_row = df_pending[df_pending[col_tr] == selected_tr].iloc[0]
                     
-                    st.success(f"Selected: {selected_row[col_tr]} - {selected_row.get('Name Of Applicant', '')}")
+                    st.success(f"Selected: {selected_row[col_tr]} for {selected_row.get('Name Of Applicant', 'N/A')}")
                     
-                    # Generate the HTML
+                    # Generate the HTML and encode for browser safety
                     html_content = get_print_html(selected_row, col_tr, col_scheme)
                     b64 = base64.b64encode(html_content.encode()).decode()
                     
-                    # Create a real browser-trigger for the print
-                    href = f'<a href="data:text/html;base64,{b64}" target="_blank" style="text-decoration: none;"><button style="background-color: #d32f2f; color: white; padding: 15px 30px; border: none; border-radius: 8px; cursor: pointer; font-size: 18px; font-weight: bold; width: 100%;">🖨️ CLICK HERE TO OPEN PRINT PREVIEW</button></a>'
+                    # Large Print Trigger Button
+                    href = f'''
+                    <a href="data:text/html;base64,{b64}" target="_blank" style="text-decoration: none;">
+                        <div style="
+                            background-color: #d32f2f; 
+                            color: white; 
+                            padding: 15px; 
+                            text-align: center; 
+                            border-radius: 10px; 
+                            font-size: 20px; 
+                            font-weight: bold; 
+                            cursor: pointer;
+                            border: 2px solid #b71c1c;
+                            margin-top: 10px;">
+                            🖨️ CLICK HERE TO PRINT PERFORMAS
+                        </div>
+                    </a>
+                    '''
                     st.markdown(href, unsafe_allow_unsafe_html=True)
-                    st.info("The button above will open the Performa in a new tab and start the printer automatically.")
+                    st.caption("Note: Clicking the button opens a new tab. Please allow pop-ups if blocked.")
 
             else:
-                st.warning("No records found matching criteria (TR No present, Date NULL).")
+                st.warning("No records found where TR No is assigned but Date is NULL.")
 
         with t2:
-            st.dataframe(df, use_container_width=True)
+            st.dataframe(df)
 
     except Exception as e:
         st.error(f"Error: {e}")
 else:
-    st.info("Please upload your PPR file to begin.")
+    st.info("Please upload your PPR file.")
