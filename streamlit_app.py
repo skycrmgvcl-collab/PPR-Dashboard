@@ -2,150 +2,136 @@ import streamlit as st
 import pandas as pd
 from st_aggrid import AgGrid, GridOptionsBuilder, JsCode
 
-st.set_page_config(page_title="MGVCL Monitoring Dashboard", layout="wide")
+st.set_page_config(page_title="MGVCL Release Dashboard", layout="wide")
 
-st.title("⚡ Subdivision SR & Installation Dashboard")
+st.title("⚡ MGVCL: Connection Release Dashboard")
 st.markdown("---")
 
-# -----------------------------------------------------------
-# DATA LOADING & ROBUST CLEANING
-# -----------------------------------------------------------
 file = st.file_uploader("Upload Excel/CSV", type=["xls","xlsx","csv"])
 
 if file:
-    # Read Data
-    if file.name.endswith("csv"):
-        df_raw = pd.read_csv(file, encoding="utf-8-sig", on_bad_lines='skip')
-    else:
-        df_raw = pd.read_excel(file)
+    try:
+        # 1. Load Data
+        if file.name.endswith("csv"):
+            df_raw = pd.read_csv(file, encoding="utf-8-sig")
+        else:
+            df_raw = pd.read_excel(file)
 
-    # Clean data: Replace NULL/nan and fix whitespace
-    df_raw.columns = df_raw.columns.str.strip()
-    df = df_raw.copy().astype(str)
-    for col in df.columns:
-        df[col] = df[col].str.strip().replace(['NULL', 'null', 'nan', 'NaN', 'None', 'NAT', 'NaT', ''], "")
+        # 2. Clean Data - CRITICAL: We strip spaces from headers
+        df_raw.columns = [str(col).strip() for col in df_raw.columns]
+        df = df_raw.copy().astype(str)
+        
+        # Replace all types of "null" with empty strings
+        for col in df.columns:
+            df[col] = df[col].str.strip().replace(['nan', 'NaN', 'NaT', 'None', 'NULL', 'nan', ''], "")
 
-    # Sidebar Filters
-    st.sidebar.header("🔍 Global Filters")
-    
-    # Scheme Filter
-    scheme_col = "Name Of Scheme"
-    if scheme_col in df.columns:
-        u_schemes = sorted([x for x in df[scheme_col].unique() if x != ""])
-        sel_schemes = st.sidebar.multiselect("Select Scheme", u_schemes, default=u_schemes)
-    else:
-        sel_schemes = []
+        # 3. Sidebar Filter
+        st.sidebar.header("🔍 Filters")
+        scheme_col = "Name Of Scheme"
+        if scheme_col in df.columns:
+            u_schemes = sorted([x for x in df[scheme_col].unique() if x != ""])
+            sel_schemes = st.sidebar.multiselect("Select Scheme", u_schemes, default=u_schemes)
+            df_filtered = df[df[scheme_col].isin(sel_schemes)]
+        else:
+            df_filtered = df
 
-    # Apply Base Filter
-    df_filtered = df[df[scheme_col].isin(sel_schemes)] if sel_schemes else df
+        # -----------------------------------------------------------
+        # 4. ROBUST JAVASCRIPT (Mapping columns correctly)
+        # -----------------------------------------------------------
+        js_release_form = JsCode("""
+        class PrintRenderer {
+            init(params) {
+                this.eGui = document.createElement('div');
+                this.eGui.innerHTML = '<button style="background-color: #d32f2f; color: white; border: none; border-radius: 4px; cursor: pointer; padding: 4px 10px; font-weight: bold; width: 100%;">🖨️ Release Form</button>';
+                this.btn = this.eGui.querySelector('button');
+                this.btn.addEventListener('click', () => {
+                    const r = params.data;
+                    
+                    // Helper function to get data even if column names vary slightly
+                    const getVal = (names) => {
+                        for (let n of names) { if (r[n] && r[n] !== 'NULL') return r[n]; }
+                        return '';
+                    };
 
-    # -----------------------------------------------------------
-    # JAVASCRIPT: RELEASE FORM (For Installation)
-    # -----------------------------------------------------------
-    js_release_form = JsCode("""
-    class PrintRenderer {
-        init(params) {
-            this.eGui = document.createElement('div');
-            this.eGui.innerHTML = `
-                <button style="background-color: #d32f2f; color: white; border: none; 
-                border-radius: 4px; cursor: pointer; padding: 4px 10px; font-weight: bold; width: 100%;">
-                🖨️ Release Form
-                </button>
-            `;
-            this.btn = this.eGui.querySelector('button');
-            this.btn.addEventListener('click', () => {
-                const r = params.data;
-                const htmlContent = `
-                    <html>
-                    <head>
-                        <meta charset="UTF-8">
-                        <style>
-                            @page { size: A4; margin: 10mm; }
-                            body { font-family: 'Arial', sans-serif; padding: 20px; border: 3px solid black; }
-                            .header { text-align: center; font-size: 22px; font-weight: bold; }
-                            .title { text-align: center; font-size: 18px; text-decoration: underline; margin: 20px 0; }
-                            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-                            td { border: 1px solid black; padding: 12px; font-size: 16px; }
-                            .label { background-color: #f5f5f5; font-weight: bold; width: 35%; }
-                            .fill { color: blue; font-weight: bold; }
-                        </style>
-                    </head>
-                    <body onload="window.print()">
+                    const html = `<html><head><meta charset="UTF-8"><style>
+                        body { font-family: Arial, sans-serif; padding: 30px; border: 3px solid black; line-height: 1.6; }
+                        .header { text-align: center; font-size: 22px; font-weight: bold; margin-bottom: 5px; }
+                        .subtitle { text-align: center; font-size: 16px; margin-bottom: 20px; text-decoration: underline; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                        td { border: 1px solid black; padding: 12px; font-size: 15px; }
+                        .label { background-color: #f5f5f5; font-weight: bold; width: 35%; }
+                        .val { font-weight: bold; }
+                        .manual { color: blue; font-weight: bold; text-decoration: underline; }
+                    </style></head><body onload="window.print()">
                         <div class="header">મધ્ય ગુજરાત વીજ કંપની લી.</div>
-                        <div class="title">કનેક્શન રીલીઝ રિપોર્ટ (Release Performa)</div>
+                        <div class="subtitle">કનેક્શન રીલીઝ રિપોર્ટ (Release Performa)</div>
                         <table>
-                            <tr><td class="label">TR / MR No</td><td style="color:red; font-weight:bold;">${r['TR MR No'] || 'NOT ASSIGNED'}</td></tr>
-                            <tr><td class="label">અરજદારનું નામ</td><td>${r['Name Of Applicant'] || ''}</td></tr>
-                            <tr><td class="label">ગામ / શહેર</td><td>${r['Village Or City'] || ''}</td></tr>
-                            <tr><td class="label">SR Number</td><td>${r['SR Number'] || ''}</td></tr>
-                            <tr><td class="label">મીટર નંબર</td><td class="fill">__________________________</td></tr>
-                            <tr><td class="label">રીલીઝ તારીખ</td><td class="fill">____ / ____ / 2026</td></tr>
+                            <tr><td class="label">TR / MR No</td><td class="val" style="color:red;">${getVal(['TR MR No', 'TR_MR_NO', 'TR NO'])}</td></tr>
+                            <tr><td class="label">અરજદારનું નામ</td><td class="val">${getVal(['Name Of Applicant', 'NAME', 'APPLICANT_NAME'])}</td></tr>
+                            <tr><td class="label">ગામ / શહેર</td><td class="val">${getVal(['Village Or City', 'VILLAGE', 'CITY'])}</td></tr>
+                            <tr><td class="label">SR Number</td><td class="val">${getVal(['SR Number', 'SR_NO', 'SR'])}</td></tr>
+                            <tr><td class="label">યોજના (Scheme)</td><td class="val">${getVal(['Name Of Scheme', 'SCHEME'])}</td></tr>
+                            <tr><td class="label">ગ્રાહક કેટેગરી</td><td class="val">${getVal(['Consumer Category', 'CATEGORY'])}</td></tr>
+                            <tr><td class="label">લોડ (Load)</td><td class="val">${getVal(['Demand Load', 'LOAD'])} ${getVal(['Load Uom', 'UOM'])}</td></tr>
+                            <tr><td colspan="2" style="background: #eee; font-weight: bold; text-align: center;">ફિલ્ડ વિગત (To be filled by staff)</td></tr>
+                            <tr><td class="label">ઇન્સ્ટોલ કરેલ મીટર નંબર</td><td class="manual">__________________________</td></tr>
+                            <tr><td class="label">મીટર મેક (Make)</td><td class="manual">__________________________</td></tr>
+                            <tr><td class="label">ઇન્સ્ટોલેશન તારીખ</td><td class="manual">____ / ____ / 2026</td></tr>
                         </table>
-                    </body>
-                    </html>
-                `;
-                var w = window.open('', '_blank');
-                w.document.write(htmlContent);
-                w.document.close();
-            });
+                        <div style="margin-top: 50px; display: flex; justify-content: space-between;">
+                            <span>ગ્રાહકની સહી: _______________</span>
+                            <span>સ્ટાફની સહી: _______________</span>
+                        </div>
+                    </body></html>`;
+                    const w = window.open('', '_blank');
+                    w.document.write(html);
+                    w.document.close();
+                });
+            }
+            getGui() { return this.eGui; }
         }
-        getGui() { return this.eGui; }
-    }
-    """)
+        """)
 
-    # -----------------------------------------------------------
-    # GRID HELPER
-    # -----------------------------------------------------------
-    def show_dashboard_grid(data, key, button_type=None):
-        if data.empty:
-            st.warning("No records found for this stage.")
-            return
-        
-        gb = GridOptionsBuilder.from_dataframe(data)
-        gb.configure_default_column(resizable=True, filter=True, sortable=True)
-        
-        if button_type == "release":
-            gb.configure_column("Print", headerName="Action", cellRenderer=js_release_form, width=140, pinned='left')
-        
-        gb.configure_pagination(paginationPageSize=15)
-        AgGrid(data, gridOptions=gb.build(), height=500, theme="streamlit", 
-               allow_unsafe_jscode=True, key=key)
+        # -----------------------------------------------------------
+        # 5. TABS
+        # -----------------------------------------------------------
+        t1, t2 = st.tabs(["🚀 Release Pending", "📁 Full Database"])
 
-    # -----------------------------------------------------------
-    # TABS SYSTEM
-    # -----------------------------------------------------------
-    t1, t2, t3 = st.tabs(["🚀 Release Pending", "📋 Survey Pending", "📁 Full Database"])
-
-    with t1:
-        # LOGIC: TR MR No is NOT NULL and Date of Release IS NULL
-        col_tr = "TR MR No"
-        col_rel_date = "Date Of Release Conn"
-        
-        if col_tr in df.columns and col_rel_date in df.columns:
-            df_release = df_filtered[
-                (df_filtered[col_tr] != "") & 
-                (df_filtered[col_rel_date] == "")
-            ].copy()
+        with t1:
+            col_tr = "TR MR No"
+            col_rel_date = "Date Of Release Conn"
             
-            st.subheader(f"Total Release Pending: {len(df_release)}")
-            st.info("These consumers have TR MR Numbers but the connection is not yet released.")
-            show_dashboard_grid(df_release, "rel_grid", button_type="release")
-        else:
-            st.error(f"Required columns '{col_tr}' or '{col_rel_date}' missing from file.")
+            if col_tr in df.columns and col_rel_date in df.columns:
+                # Logic: TR Number is present, but Release Date is empty
+                df_release = df_filtered[
+                    (df_filtered[col_tr] != "") & (df_filtered[col_rel_date] == "")
+                ].copy()
+                
+                st.subheader(f"Total Pending: {len(df_release)}")
+                
+                if not df_release.empty:
+                    gb = GridOptionsBuilder.from_dataframe(df_release)
+                    gb.configure_default_column(resizable=True, filter=True, sortable=True)
+                    gb.configure_column("Print", headerName="Action", cellRenderer=js_release_form, width=140, pinned='left')
+                    gb.configure_pagination(paginationPageSize=15)
+                    
+                    AgGrid(
+                        df_release, 
+                        gridOptions=gb.build(), 
+                        height=500, 
+                        theme="streamlit", 
+                        allow_unsafe_jscode=True, 
+                        key="release_grid"
+                    )
+                else:
+                    st.success("No records found for release.")
+            else:
+                st.error(f"Excel is missing required columns. Found: {list(df.columns)}")
 
-    with t2:
-        # LOGIC: Survey Category is empty
-        col_survey = "Survey Category"
-        if col_survey in df.columns:
-            df_survey = df_filtered[df_filtered[col_survey] == ""].copy()
-            st.subheader(f"Total Survey Pending: {len(df_survey)}")
-            show_dashboard_grid(df_survey, "survey_grid")
-        else:
-            st.write("Column 'Survey Category' not found for survey tracking.")
+        with t2:
+            st.dataframe(df_filtered)
 
-    with t3:
-        st.subheader("Complete Records")
-        show_dashboard_grid(df_filtered, "full_grid")
-
+    except Exception as e:
+        st.error(f"Error: {e}")
 else:
-    st.info("Please upload the subdivision PPR/SR report file.")
+    st.info("Please upload your PPR file.")
