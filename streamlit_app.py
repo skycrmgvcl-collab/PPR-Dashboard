@@ -23,29 +23,32 @@ if file:
         for col in df.columns:
             df[col] = df[col].str.strip().replace(['nan', 'NaN', 'NaT', 'None', 'NULL', ''], "")
 
-        # 2. Key Logic Columns
+        # 2. Define Key Logic Columns
         col_sr = "SR Number"
         col_type = "SR Type"
         col_tr_recv = "Date Of TR Recv"
         col_rel_date = "Date Of Release Conn"
+        scheme_col = "Name Of Scheme"
         
         # 3. Sidebar Filters
         st.sidebar.header("🔍 Search & Filter")
         sr_search = st.sidebar.text_input("Quick SR Search")
         
-        scheme_col = "Name Of Scheme"
+        # Scheme Filter Logic
         if scheme_col in df.columns:
             u_schemes = sorted([x for x in df[scheme_col].unique() if x != ""])
             sel_schemes = st.sidebar.multiselect("Scheme Filter", u_schemes, default=u_schemes)
             df_filtered = df[df[scheme_col].isin(sel_schemes)]
         else:
+            sel_schemes = [] # Fallback for key generation
             df_filtered = df
 
+        # SR Search Logic
         if sr_search:
             df_filtered = df_filtered[df_filtered[col_sr].str.contains(sr_search, case=False)]
 
         # -----------------------------------------------------------
-        # 4. MASTER JAVASCRIPT: MAXIMUM DATA + BLANK WRITING BOXES
+        # 4. MASTER JAVASCRIPT: PRINT FORM LOGIC
         # -----------------------------------------------------------
         js_release_form = JsCode(f"""
         class PrintRenderer {{
@@ -112,6 +115,7 @@ if file:
         # 5. DASHBOARD FILTERING & DISPLAY
         # -----------------------------------------------------------
         if col_tr_recv in df.columns and col_rel_date in df.columns:
+            # Filter for Pending cases
             df_pending = df_filtered[
                 (df_filtered[col_tr_recv] != "") & (df_filtered[col_rel_date] == "")
             ].copy()
@@ -122,11 +126,15 @@ if file:
                 gb = GridOptionsBuilder.from_dataframe(df_pending)
                 gb.configure_default_column(resizable=True, filter=True, sortable=True)
                 
-                # Action Column
+                # Action Column Configuration
                 gb.configure_column("Print", headerName="Action", cellRenderer=js_release_form, width=140, pinned='left')
                 gb.configure_column(col_sr, pinned='left', width=140)
                 
                 gb.configure_pagination(paginationPageSize=20)
+                
+                # --- KEY FIX: DYNAMIC KEY ---
+                # This key changes whenever the filters change, forcing the grid to refresh.
+                dynamic_key = f"grid_{len(df_pending)}_{len(sel_schemes)}_{sr_search}"
                 
                 AgGrid(
                     df_pending, 
@@ -134,14 +142,14 @@ if file:
                     height=600, 
                     theme="streamlit", 
                     allow_unsafe_jscode=True, 
-                    key="final_v3_grid"
+                    key=dynamic_key
                 )
             else:
-                st.success("Everything is up to date!")
+                st.success("No pending cases found for the selected filters.")
         else:
-            st.error(f"Missing headers: Check for '{col_tr_recv}' and '{col_rel_date}' in your file.")
+            st.error(f"Missing essential headers: Make sure the file has '{col_tr_recv}' and '{col_rel_date}'.")
 
     except Exception as e:
-        st.error(f"Error: {e}")
+        st.error(f"An error occurred: {e}")
 else:
-    st.info("Upload your PPR Excel file to begin.")
+    st.info("Welcome! Please upload your PPR Excel file in the sidebar to begin.")
